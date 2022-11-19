@@ -7,6 +7,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.grab{
+  cursor: grab;
+}
+.grabbing{
+  cursor: grabbing;
+}
+.default{
+  cursor: default;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
