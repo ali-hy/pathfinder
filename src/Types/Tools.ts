@@ -1,3 +1,5 @@
+import Pos from "./Pos";
+
 export enum TOOL{
     hand,
     wallBrush,
@@ -24,7 +26,7 @@ export class tool{
     onMouseDown():actionDetails{
         return {type: ACTION.none};
     };
-    onMouseMove():actionDetails{
+    onMouseMove(newPosition:Pos):actionDetails{
         return {type: ACTION.none};
     };
     onMouseUp():actionDetails{
@@ -37,6 +39,7 @@ export class tool{
 
 export class handTool extends tool{
     static index = TOOL.hand;
+    static startPosition:Pos;
     static cursorClass = "grab";
     static iconURL = "../../public/Images/Icons/open-hand.png"
 
@@ -45,7 +48,7 @@ export class handTool extends tool{
         this.active = true;
         return {type: ACTION.rerenderTool}
     }
-    onMouseMove():actionDetails{
+    onMouseMove(newPosition:Pos):actionDetails{
         return {type: ACTION.move};
     }
     onMouseUp():actionDetails{
