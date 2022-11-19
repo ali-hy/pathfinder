@@ -20,10 +20,10 @@ export interface actionDetails{
 }
 
 export class tool{
-    index:number;
+    static index:number;
     cursorClass:string;
     active = false;
-    onMouseDown():actionDetails{
+    onMouseDown(e:MouseEvent):actionDetails{
         return {type: ACTION.none};
     };
     onMouseMove(newPosition:Pos):actionDetails{
@@ -39,17 +39,25 @@ export class tool{
 
 export class handTool extends tool{
     static index = TOOL.hand;
-    static startPosition:Pos;
+    static prevPosition:Pos;
     static cursorClass = "grab";
     static iconURL = "../../public/Images/Icons/open-hand.png"
 
-    onMouseDown():actionDetails{
+    onMouseDown(e:MouseEvent):actionDetails{
         this.cursorClass = "grabbing";
         this.active = true;
+        handTool.prevPosition = {x: e.clientX, y: e.clientY};
+
         return {type: ACTION.rerenderTool}
     }
     onMouseMove(newPosition:Pos):actionDetails{
-        return {type: ACTION.move};
+        // console.log('trying to move')
+        const result =  {type: ACTION.move, payload:{
+            x: newPosition.x - handTool.prevPosition.x, 
+            y: newPosition.y - handTool.prevPosition.y
+        }};
+        handTool.prevPosition = {...newPosition};
+        return result;
     }
     onMouseUp():actionDetails{
         this.active = false;
@@ -58,7 +66,7 @@ export class handTool extends tool{
     }
     toString(){
         return (`handTool{
-            index: ${this.index},
+            index: ${handTool.index},
             cursorClass: ${this.cursorClass}
         }`)
     }
