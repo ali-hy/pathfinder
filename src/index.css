@@ -13,6 +13,9 @@ body {
 .grabbing{
   cursor: grabbing;
 }
+.crosshair{
+  cursor: crosshair;
+}
 .default{
   cursor: default;
 }

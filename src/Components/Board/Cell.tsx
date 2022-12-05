@@ -1,11 +1,14 @@
 import { css, StyleSheet } from "aphrodite";
+import { url } from "inspector";
 import { CellState } from "../../Types/CellState";
 
+const imagesPath = "../../Images/Icons";
 
 interface CellProps{
     x:number,
     y:number,
-    cellState:CellState
+    cellState:CellState,
+    onClick():void,
 }
 
 export default function Cell(props:CellProps){
@@ -19,7 +22,7 @@ export default function Cell(props:CellProps){
             backgroundColor: "black",
         },
         empty: {
-            backgroundColor: "transparent",
+            backgroundImage: 'transparent',
         },
         path: {
             backgroundColor: "#009977",
@@ -29,8 +32,10 @@ export default function Cell(props:CellProps){
         }
     })
 
-
     return(
-        <div className={'cell ' + css(cellStyles.size, cellStyles.empty)}></div>
+        <div 
+            className={'cell ' + css(cellStyles.size, cellStyles[CellState[props.cellState]])}
+            onClick={() => props.onClick()}
+        />
     )
 }

@@ -1,9 +1,17 @@
 import Pos from "./Pos";
 
+import handIcon from "../Images/Icons/open-hand.png";
+import personIcon from "../Images/Icons/person.png";
+import locationPinIcon from "../Images/Icons/location-pin.png";
+import wallIcon from "../Images/Icons/brick-wall.jpg";
+
+import { CellState } from "./CellState";
+
 export enum TOOL{
     hand,
-    wallBrush,
-    startBrush,
+    placeWall,
+    placeSearchStart,
+    placeSearchTarget,
     endBrush
 }
 
@@ -20,9 +28,16 @@ export interface actionDetails{
 }
 
 export class tool{
-    static index:number;
     cursorClass:string;
+    index:number;
+    icon;
+
     active = false;
+
+    getIndex():number{return this.index}
+    getIcon(){return this.icon}
+    getCursorClass():string{return this.cursorClass}
+
     onMouseDown(e:MouseEvent):actionDetails{
         return {type: ACTION.none};
     };
@@ -38,41 +53,75 @@ export class tool{
 }
 
 export class handTool extends tool{
-    static index = TOOL.hand;
-    static prevPosition:Pos;
-    static cursorClass = "grab";
-    static iconURL = "../../public/Images/Icons/open-hand.png"
+    index = TOOL.hand;
+    prevPosition:Pos;
+    cursorClass = "grab";
+    icon = handIcon;
+
+    getIndex(){
+        return this.index;
+    }
+    getIcon(){
+        return this.icon;
+    }
+    getCursorClass(): string {
+        return this.cursorClass;
+    }
+    setCursorClass(cursor:string){
+        this.cursorClass = cursor;
+    }
 
     onMouseDown(e:MouseEvent):actionDetails{
-        this.cursorClass = "grabbing";
+        this.setCursorClass('grabbing');
         this.active = true;
-        handTool.prevPosition = {x: e.clientX, y: e.clientY};
+        this.prevPosition = {x: e.clientX, y: e.clientY};
 
         return {type: ACTION.rerenderTool}
     }
     onMouseMove(newPosition:Pos):actionDetails{
-        // console.log('trying to move')
         const result =  {type: ACTION.move, payload:{
-            x: newPosition.x - handTool.prevPosition.x, 
-            y: newPosition.y - handTool.prevPosition.y
+            x: newPosition.x - this.prevPosition.x, 
+            y: newPosition.y - this.prevPosition.y
         }};
-        handTool.prevPosition = {...newPosition};
+        this.prevPosition = {...newPosition};
         return result;
     }
     onMouseUp():actionDetails{
         this.active = false;
-        this.cursorClass = "grab";
+        this.setCursorClass('grab');
         return {type: ACTION.rerenderTool}
     }
     toString(){
         return (`handTool{
-            index: ${handTool.index},
-            cursorClass: ${this.cursorClass}
+            index: ${this.index},
+            cursorClass: ${this.getCursorClass()}
         }`)
     }
 }
 
-const tools = []
+export class placeTool extends tool{
+    itemPlaced:CellState;
+    cursorClass:string = "crosshair"
+
+    constructor(index:TOOL, itemPlaced:CellState, icon?){
+        super();
+        this.index = index;
+        this.itemPlaced = itemPlaced;
+        this.icon = icon;
+    }
+
+    onMouseDown(cell:Pos): actionDetails {
+        return {type: ACTION.place, payload: {
+            cell: cell,
+            newState: this.itemPlaced
+        }}
+    }
+}
+
+const tools = [];
 tools[TOOL.hand] = new handTool();
+tools[TOOL.placeWall] = new placeTool(TOOL.placeWall, CellState.wall, wallIcon);
+tools[TOOL.placeSearchStart] = new placeTool(TOOL.placeSearchStart, CellState.searchStart, personIcon);
+tools[TOOL.placeSearchTarget] = new placeTool(TOOL.placeSearchTarget, CellState.target, locationPinIcon);
 
 export default tools;
