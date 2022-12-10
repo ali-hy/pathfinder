@@ -9,6 +9,7 @@ interface CellProps{
     y:number,
     cellState:CellState,
     onClick():void,
+    onEnter():void
 }
 
 export default function Cell(props:CellProps){
@@ -17,25 +18,35 @@ export default function Cell(props:CellProps){
             width: "20px",
             height: "20px",
             border: "solid 1px #bbb",
+            backgroundPosition: "center",
         },
         wall: {
-            backgroundColor: "black",
+            background: "black",
         },
         empty: {
-            backgroundImage: 'transparent',
+            background: 'none',
         },
         path: {
-            backgroundColor: "#009977",
+            background: "#009977",
         },
-        search: {
-            backgroundColor: "#405000"
-        }
+        searchStart: {
+            background: "#0055ff"
+        },
+        target: {
+            background: "#ff4044"
+        },
+        
     })
+
+    const clickHandler = function(e:MouseEvent){
+        if(e.button === 0) props.onClick();
+    }
 
     return(
         <div 
             className={'cell ' + css(cellStyles.size, cellStyles[CellState[props.cellState]])}
-            onClick={() => props.onClick()}
+            onMouseDown={clickHandler as any}
+            onMouseEnter={() => props.onEnter()}
         />
     )
 }

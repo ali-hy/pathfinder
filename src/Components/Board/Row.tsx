@@ -5,6 +5,7 @@ interface RowProps{
     y:number;
     cellStates:CellState[];
     onCellClick(x:number, y:number):void;
+    onCellEnter(x:number, y:number):void;
 }
 
 export default function Row(props : RowProps){
@@ -15,6 +16,7 @@ export default function Row(props : RowProps){
             x={x} 
             y={props.y} 
             onClick={() => props.onCellClick(x, props.y)}
+            onEnter={() => props.onCellEnter(x, props.y)}
         />)}
     </div>)
 }

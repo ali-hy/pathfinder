@@ -15,6 +15,7 @@ interface BoardProps{
     selectedTool:tool;
     setSelectedTool:Function;
     onCellClick(x:number, y:number):void;
+    onCellEnter(x:number, y:number):void;
 }
 
 
@@ -114,12 +115,24 @@ export default function Board(props:BoardProps){
     })
 
     const grid = <div className={`position-relative`}>
-        {props.board.map((row, y) => { return (<Row onCellClick={(x:number, y:number) => props.onCellClick(x,y)} key={y} cellStates={row} y={y}/>)})}
+        {props.board.map((row, y) => { return (
+            <Row 
+                onCellClick={(x:number, y:number) => props.onCellClick(x,y)}
+                onCellEnter={(x:number, y:number) => props.onCellEnter(x,y)}
+                key={y}
+                cellStates={row} 
+                y={y}
+            />)})}
     </div>;
 
     return(
-        <div onMouseDown={mouseDownHandler as any} onMouseUp={mouseUpHandler as any} onMouseMove={mouseMoveHandler as any}  
-        ref={boardContainerRef} className={"board-container " + css(boardStyles.board)}>
+        <div 
+            className={"board-container " + css(boardStyles.board)}
+            onMouseDown={mouseDownHandler as any} 
+            onMouseUp={mouseUpHandler as any} 
+            onMouseMove={mouseMoveHandler as any}  
+            ref={boardContainerRef} 
+        >
             <div ref={boardRef} className={"board user-select-none"}>
                 {grid}
             </div>

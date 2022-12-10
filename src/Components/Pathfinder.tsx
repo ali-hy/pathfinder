@@ -5,7 +5,9 @@ import tools, { handTool, placeTool, TOOL, tool } from "../Types/Tools";
 import Banner from "./Banner/Banner";
 import Board from "./Board/Board";
 import ToolButton from "./Banner/ToolButton";
-import useLoggingState from "../Hooks/useLogginState";
+import useUpdatingRef from "../Hooks/useUpdatingRef";
+import useForceUpdate from "../Hooks/useForceUpdate";
+// import useLoggingState from "../Hooks/useLogginState";
 
 
 // ------ INITIAL GRID DATA ------- 
@@ -25,14 +27,27 @@ function generateBoard(){
 export default function PathFinder(){
     const [boardPosition, setBoardPosition] = useState<Pos>({x: 0, y: 0});
     const [board, setBoard] = useState(useMemo(generateBoard, []));
-    const [selectedTool, setSelectedTool] = useLoggingState(tools[TOOL.hand]);
+    const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
+    const forceUpdate = useForceUpdate();
 
     const onCellClick = (x:number, y:number):void => {
-        console.log(x, y);
         if(!(selectedTool instanceof placeTool)) {
             return;
         }
         const nextBoard = [...board];
+        const { payload } = selectedTool.onMouseDown({x: x, y: y});
+        nextBoard[y][x] = payload.newState;
+        setBoard(nextBoard);
+    }
+    const onCellEnter = (x:number, y:number):void => {
+        if(!(selectedTool instanceof placeTool)
+            || !selectedTool.dragable
+            || !selectedTool.active
+        ) {
+            return;
+        }
+        const nextBoard = [...board];
+        const { payload } = selectedTool.onMouseEnter({x: x, y: y});
         nextBoard[y][x] = selectedTool.itemPlaced;
         setBoard(nextBoard);
     }
@@ -57,6 +72,7 @@ export default function PathFinder(){
                 selectedTool = {selectedTool}
                 setSelectedTool = {setSelectedTool}
                 onCellClick={(x:number, y:number) => onCellClick(x, y)}
+                onCellEnter={(x:number, y:number) => onCellEnter(x,y)}
             />
         </>
     )

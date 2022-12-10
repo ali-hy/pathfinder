@@ -4,6 +4,8 @@ import handIcon from "../Images/Icons/open-hand.png";
 import personIcon from "../Images/Icons/person.png";
 import locationPinIcon from "../Images/Icons/location-pin.png";
 import wallIcon from "../Images/Icons/brick-wall.jpg";
+import eraserIcon from "../Images/Icons/eraser.png";
+// eraser by Madeleine Bennett from <a href="https://thenounproject.com/browse/icons/term/eraser/" target="_blank" title="eraser Icons">Noun Project</a>
 
 import { CellState } from "./CellState";
 
@@ -12,7 +14,8 @@ export enum TOOL{
     placeWall,
     placeSearchStart,
     placeSearchTarget,
-    endBrush
+    endBrush,
+    eraser
 }
 
 export enum ACTION{
@@ -27,7 +30,7 @@ export interface actionDetails{
     payload?:any
 }
 
-export class tool{
+export abstract class tool{
     cursorClass:string;
     index:number;
     icon;
@@ -38,15 +41,10 @@ export class tool{
     getIcon(){return this.icon}
     getCursorClass():string{return this.cursorClass}
 
-    onMouseDown(e:MouseEvent):actionDetails{
-        return {type: ACTION.none};
-    };
-    onMouseMove(newPosition:Pos):actionDetails{
-        return {type: ACTION.none};
-    };
-    onMouseUp():actionDetails{
-        return {type: ACTION.none};
-    };
+    abstract onMouseDown(e:MouseEvent):actionDetails;
+    onMouseMove(newPosition:Pos):actionDetails{return {type: ACTION.none}};
+    onMouseUp():actionDetails{ return {type:ACTION.none} };
+    
     toString():string{
         return "tool";
     };
@@ -101,27 +99,47 @@ export class handTool extends tool{
 
 export class placeTool extends tool{
     itemPlaced:CellState;
-    cursorClass:string = "crosshair"
+    cursorClass:string = "crosshair";
+    dragable:boolean;
+    active = false;
 
-    constructor(index:TOOL, itemPlaced:CellState, icon?){
+    constructor(index:TOOL, itemPlaced:CellState, icon?, dragable:boolean =false){
         super();
         this.index = index;
         this.itemPlaced = itemPlaced;
         this.icon = icon;
+        this.dragable = dragable;
     }
 
-    onMouseDown(cell:Pos): actionDetails {
+    onMouseDown(cell:Pos):actionDetails {
+        this.active = true;
         return {type: ACTION.place, payload: {
             cell: cell,
             newState: this.itemPlaced
         }}
     }
+
+    onMouseEnter(cell:Pos):actionDetails {
+        if(!this.active){
+            return {type: ACTION.none}
+        }
+        return {type: ACTION.place, payload:{
+            cell: cell,
+            newState: this.itemPlaced
+        }}
+    }
+
+    onMouseUp(){
+        this.active = false;
+        return{type: ACTION.none}
+    }
 }
 
 const tools = [];
 tools[TOOL.hand] = new handTool();
-tools[TOOL.placeWall] = new placeTool(TOOL.placeWall, CellState.wall, wallIcon);
+tools[TOOL.placeWall] = new placeTool(TOOL.placeWall, CellState.wall, wallIcon, true);
 tools[TOOL.placeSearchStart] = new placeTool(TOOL.placeSearchStart, CellState.searchStart, personIcon);
 tools[TOOL.placeSearchTarget] = new placeTool(TOOL.placeSearchTarget, CellState.target, locationPinIcon);
+tools[TOOL.eraser] = new placeTool(TOOL.eraser, CellState.empty, eraserIcon, true);
 
 export default tools;
