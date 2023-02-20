@@ -1,16 +1,17 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import './Board.scss';
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CellState } from "../../Types/CellState";
 import Row from "./Row";
-import tools, { ACTION, actionDetails, TOOL, tool } from '../../Types/Tools';
+import tools, { ACTION, actionDetails, placeTool, TOOL, tool } from '../../Types/Tools';
 import Pos from '../../Types/Pos';
 import { css, StyleSheet } from 'aphrodite';
 import useUpdatingRef from '../../Hooks/useUpdatingRef';
 import useForceUpdate from '../../Hooks/useForceUpdate';
+import CellData from '../../Types/CellData';
 
 interface BoardProps{
-    board:CellState[][];
+    board:CellData[][];
     boardPosition:Pos;
     selectedTool:tool;
     setSelectedTool:Function;
@@ -43,6 +44,8 @@ export default function Board(props:BoardProps){
     const mouseDownHandler = useCallback((e:MouseEvent) => {
         var action:actionDetails;
         if(e.button === 0){ // left mb down
+            if(selectedToolRef.current instanceof placeTool)
+                return;
             action = selectedToolRef.current.onMouseDown(e);
             action.payload = {x: e.clientX, y: e.clientY};
             takeAction(action);
@@ -58,14 +61,14 @@ export default function Board(props:BoardProps){
         }
     }, [])
     const mouseUpHandler = useCallback((e:MouseEvent) => {
-        if(e.button === 0){ // left mb down
+        if(e.button === 0){ // left mb up
             const action:actionDetails = selectedToolRef.current.onMouseUp();
             takeAction(action);
         } 
-        else if (e.button === 1){ // middle mb mid
+        else if (e.button === 1){ // middle mb up
             tools[TOOL.hand].onMouseUp();
             props.setSelectedTool(prevToolRef.current);
-            setPrevTool(undefined);
+            // setPrevTool(undefined);
         }
     },[])
     const mouseMoveHandler = useCallback((e:MouseEvent) => {
@@ -120,7 +123,7 @@ export default function Board(props:BoardProps){
                 onCellClick={(x:number, y:number) => props.onCellClick(x,y)}
                 onCellEnter={(x:number, y:number) => props.onCellEnter(x,y)}
                 key={y}
-                cellStates={row} 
+                cellData={row} 
                 y={y}
             />)})}
     </div>;

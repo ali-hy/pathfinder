@@ -1,13 +1,11 @@
 import { css, StyleSheet } from "aphrodite";
-import { url } from "inspector";
-import { CellState } from "../../Types/CellState";
-
-const imagesPath = "../../Images/Icons";
+import CellData from "../../Types/CellData";
+import { CELLSTATE } from "../../Types/CellState";
 
 interface CellProps{
     x:number,
     y:number,
-    cellState:CellState,
+    cellData:CellData,
     onClick():void,
     onEnter():void
 }
@@ -29,13 +27,15 @@ export default function Cell(props:CellProps){
         path: {
             background: "#009977",
         },
+        visited:{
+            background: "#cafff9",
+        },
         searchStart: {
             background: "#0055ff"
         },
         target: {
             background: "#ff4044"
         },
-        
     })
 
     const clickHandler = function(e:MouseEvent){
@@ -44,9 +44,9 @@ export default function Cell(props:CellProps){
 
     return(
         <div 
-            className={'cell ' + css(cellStyles.size, cellStyles[CellState[props.cellState]])}
+            className={'cell ' + css(cellStyles.size, cellStyles[CELLSTATE[props.cellData.state]])}
             onMouseDown={clickHandler as any}
-            onMouseEnter={() => props.onEnter()}
+            onMouseEnter={() => props.onEnter()} 
         />
     )
 }

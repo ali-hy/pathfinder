@@ -12,7 +12,7 @@ export default function Banner(props:BannerProps){
                 <div className="me-3"><select name="" id="">
                     <option value={0}>pathfinder-1</option>    
                 </select></div>
-                <div className="col d-flex">
+                <div className="col d-flex justify-content-between align-items-center">
                     {props.children}
                 </div>
             </div>

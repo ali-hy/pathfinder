@@ -7,7 +7,7 @@ import wallIcon from "../Images/Icons/brick-wall.jpg";
 import eraserIcon from "../Images/Icons/eraser.png";
 // eraser by Madeleine Bennett from <a href="https://thenounproject.com/browse/icons/term/eraser/" target="_blank" title="eraser Icons">Noun Project</a>
 
-import { CellState } from "./CellState";
+import { CELLSTATE } from "./CellState";
 
 export enum TOOL{
     hand,
@@ -22,6 +22,7 @@ export enum ACTION{
     move,
     place,
     rerenderTool,
+    compound,
     none
 }
 
@@ -33,7 +34,7 @@ export interface actionDetails{
 export abstract class tool{
     cursorClass:string;
     index:number;
-    icon;
+    icon:string;
 
     active = false;
 
@@ -98,25 +99,43 @@ export class handTool extends tool{
 }
 
 export class placeTool extends tool{
-    itemPlaced:CellState;
+    itemPlaced:CELLSTATE;
     cursorClass:string = "crosshair";
     dragable:boolean;
     active = false;
+    onlyOne:boolean;
+    previousPosition?:Pos;
 
-    constructor(index:TOOL, itemPlaced:CellState, icon?, dragable:boolean =false){
+    constructor(index:TOOL, itemPlaced:CELLSTATE, icon?:string, onlyOne=false){
         super();
         this.index = index;
         this.itemPlaced = itemPlaced;
         this.icon = icon;
-        this.dragable = dragable;
+        this.dragable = !onlyOne;
+        this.onlyOne = onlyOne;
     }
 
     onMouseDown(cell:Pos):actionDetails {
         this.active = true;
-        return {type: ACTION.place, payload: {
-            cell: cell,
-            newState: this.itemPlaced
-        }}
+        if(!this.onlyOne)
+            return {type: ACTION.place, payload: {
+                cell: cell,
+                newState: this.itemPlaced
+            }}
+        if(this.previousPosition === undefined){
+            this.previousPosition = cell;
+        }
+        const result = {
+            type: ACTION.place, payload: 
+            {
+                cell: cell,
+                newState: this.itemPlaced,
+                replacePrev: true,
+                previousPosition: {...this.previousPosition}
+            }
+        };
+        this.previousPosition = cell;
+        return result;
     }
 
     onMouseEnter(cell:Pos):actionDetails {
@@ -131,15 +150,33 @@ export class placeTool extends tool{
 
     onMouseUp(){
         this.active = false;
-        return{type: ACTION.none}
+        return { type: ACTION.none };
     }
 }
 
 const tools = [];
 tools[TOOL.hand] = new handTool();
-tools[TOOL.placeWall] = new placeTool(TOOL.placeWall, CellState.wall, wallIcon, true);
-tools[TOOL.placeSearchStart] = new placeTool(TOOL.placeSearchStart, CellState.searchStart, personIcon);
-tools[TOOL.placeSearchTarget] = new placeTool(TOOL.placeSearchTarget, CellState.target, locationPinIcon);
-tools[TOOL.eraser] = new placeTool(TOOL.eraser, CellState.empty, eraserIcon, true);
+tools[TOOL.placeWall] = new placeTool(
+    TOOL.placeWall, 
+    CELLSTATE.wall, 
+    wallIcon
+);
+tools[TOOL.placeSearchStart] = new placeTool(
+    TOOL.placeSearchStart, 
+    CELLSTATE.searchStart, 
+    personIcon, 
+    true
+);
+tools[TOOL.placeSearchTarget] = new placeTool(
+    TOOL.placeSearchTarget, 
+    CELLSTATE.target, 
+    locationPinIcon, 
+    true
+);
+tools[TOOL.eraser] = new placeTool(
+    TOOL.eraser, 
+    CELLSTATE.empty, 
+    eraserIcon
+);
 
 export default tools;

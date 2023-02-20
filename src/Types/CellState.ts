@@ -1,7 +1,8 @@
-export enum CellState{
+export enum CELLSTATE{
     empty,
+    target,
     wall,
     path,
+    visited,
     searchStart,
-    target
 }
