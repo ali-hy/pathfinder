@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CELLSTATE } from "../Types/CellState";
 import Pos from "../Types/Pos";
 import tools, { placeTool, TOOL, tool } from "../Types/Tools";
@@ -8,6 +9,8 @@ import ToolButton from "./Banner/ToolButton";
 import useForceUpdate from "../Hooks/useForceUpdate";
 import CellData from "../Types/CellData";
 import { BOARDSTATE } from "../Types/BoardState";
+import { ALGORITHM } from "../Types/algorithms/ALGORITHM";
+import { PathfindingAlgorithm } from "../Types/algorithms/PathfindingAlgorithm";
 
 // ------ INITIAL GRID DATA -------
 export const gridHeight = 40;
@@ -17,21 +20,39 @@ function generateBoard() {
   for (let y = 0; y < emptyBoard.length; y++) {
     emptyBoard[y] = new Array(gridWidth);
     for (let x = 0; x < emptyBoard[y].length; x++) {
-      emptyBoard[y][x] = new CellData(new Pos({x,y}));
+      emptyBoard[y][x] = new CellData(new Pos(x,y));
     }
   }
   return emptyBoard;
 }
 
 export default function PathFinder() {
+  const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
   const [boardPosition, setBoardPosition] = useState<Pos>({ x: 0, y: 0 });
   const [board, setBoard] = useState(useMemo(generateBoard, []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
+  const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.makeDo);
   const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
   const [startPosition, setStartPosition] = useState<Pos>();
   const [targetPosition, setTargetPosition] = useState<Pos>();
   const [message, setMessage] = useState<string>();
   const forceUpdate = useForceUpdate();
+
+  const startTime = useRef<number>(-1);
+  const searchIntervalTime = useRef<number>(50);
+  const walkIntervalTime = useRef<number>(10);
+  const prevRemainder = useRef<number>(0);
+
+  // ---- UTILITY FUNCTIONS ----
+  const initAlgorithms = () => {
+    algorithms[ALGORITHM.makeDo] = new PathfindingAlgorithm(board);
+    setAlgorithms([...algorithms]);
+  }
+
+  // on component loaded
+  useEffect(() => {
+    initAlgorithms();
+  }, []);
 
   const resetPathSearch = (): void => {
     board.forEach((row) => {
@@ -47,28 +68,49 @@ export default function PathFinder() {
   };
 
   const fillInPath = (path:Pos[]) => {
-    path.slice(0,-1).forEach((position) => {
-      const cell = getCellAtPos(position);
-      cell.walk();
-    })
-  }
+    path.pop();
+    var startTime:number, 
+    prevRemainder = {current: -1},
+    indexInPath = {current: 0};
+
+    const walkOneStep = (time:number) => {
+      if(indexInPath.current >= path.length){
+        return;
+      }
+      if(startTime === undefined){
+        startTime = time;
+        prevRemainder.current = 0;
+      }
+      const elapsedTime = time - startTime;
+      const currentRemainder = elapsedTime % walkIntervalTime.current;
+      if(currentRemainder < prevRemainder.current){
+        const currentCell = getCellAtPos(path[indexInPath.current++]);
+        currentCell.walk();
+        setBoard([...board]);
+      }
+      prevRemainder.current = currentRemainder;
+      requestAnimationFrame(walkOneStep);
+    };
+
+    requestAnimationFrame(walkOneStep);
+  };
 
   const onCellClick = (x: number, y: number): void => {
     if (!(selectedTool instanceof placeTool)) {
       return;
     }
-    if (boardState === BOARDSTATE.pathFound){
+    if (boardState === BOARDSTATE.searchComplete){
       resetPathSearch();
     }
     const nextBoard = [...board];
-    const { payload } = selectedTool.onMouseDown(new Pos({x, y}));
+    const { payload } = selectedTool.onMouseDown(new Pos( x,y ));
     if (payload.replacePrev) {
       const { x: prevX, y: prevY } = payload.previousPosition;
       nextBoard[prevY][prevX].state = CELLSTATE.empty;
       if (payload.newState === CELLSTATE.searchStart) {
-        setStartPosition(new Pos({ x, y }));
+        setStartPosition(new Pos( x,y ));
       } else if (payload.newState === CELLSTATE.target) {
-        setTargetPosition(new Pos({ x, y }));
+        setTargetPosition(new Pos( x,y ));
       }
     }
     nextBoard[y][x].state = payload.newState;
@@ -84,7 +126,7 @@ export default function PathFinder() {
       return;
     }
     const nextBoard = [...board];
-    const { payload } = selectedTool.onMouseEnter(new Pos({x, y}));
+    const { payload } = selectedTool.onMouseEnter(new Pos( x,y ));
     nextBoard[y][x].state = payload.newState;
     setBoard(nextBoard);
   };
@@ -92,16 +134,16 @@ export default function PathFinder() {
   const getAdjacentPositions = ({ x, y }: Pos) => {
     const adjacentPositions: Pos[] = [];
     if (x > 0) {
-      adjacentPositions.push(new Pos({ x: x - 1, y }));
+      adjacentPositions.push(new Pos(x - 1, y));
     }
     if (x < gridWidth - 1) {
-      adjacentPositions.push(new Pos({ x: x + 1, y }));
+      adjacentPositions.push(new Pos( x + 1, y));
     }
     if (y > 0) {
-      adjacentPositions.push(new Pos({ x, y: y - 1 }));
+      adjacentPositions.push(new Pos(x, y - 1));
     }
     if (y < gridHeight - 1) {
-      adjacentPositions.push(new Pos({ x, y: y + 1 }));
+      adjacentPositions.push(new Pos(x, y + 1));
     }
     return adjacentPositions;
   };
@@ -111,51 +153,38 @@ export default function PathFinder() {
   };
 
   const initPathFinding = () => {
-    resetPathSearch();
-
-    if (startPosition === undefined) {
-      setMessage("No start position defined");
-      return;
+    window.requestAnimationFrame(executePathFindingStep);
+    algorithms[selectedAlgorithm] = new PathfindingAlgorithm(board);
+    algorithms[selectedAlgorithm].initPathfinding(startPosition);
+  }
+  
+  const executePathFindingStep = (time:number) => {
+    if(startTime.current < 0){
+      startTime.current = time;
+      console.log("start time: ", startTime.current);
     }
-    var target:Pos;
+    const elapsedTime = time - startTime.current;
+    const currentRemainder = elapsedTime % searchIntervalTime.current;
 
-    const posQueue = getAdjacentPositions(startPosition);
-    const paths:Record<string, Pos[]> = {};
-    posQueue.forEach((position) => {
-      // console.log(`adding stuff to (${position.toString()})`);
-      paths[position.toString()] = [position];
-    });
+    if(currentRemainder < prevRemainder.current){
+      const {board, boardState, path} = algorithms[selectedAlgorithm].executeStep();
 
-    while (posQueue.length > 0) {
-      const currentCell = getCellAtPos(posQueue.shift());
-      // console.log(`position of current cell: (${currentCell.position.toString()})`);
-      if (!currentCell.isTravelValid()) {
-        continue;
+      setBoard(board);
+      setBoardState(boardState);
+      if(boardState === BOARDSTATE.searchComplete){
+        fillInPath(path);
+        return;
       }
-      if (currentCell.state === CELLSTATE.target) {
-        target = currentCell.position;
-        break;
-      }
-      const adjacentPositions = getAdjacentPositions(currentCell.position);
-      adjacentPositions.forEach((position:Pos) => {
-        // console.log(`adding position: (${position.toString()}) to (${currentCell.position.toString()})`);
-
-        paths[position.toString()] = paths[currentCell.position.toString()].concat(position);
-      });
-      currentCell.visit();
-      posQueue.push(...adjacentPositions);
     }
-
-    fillInPath(paths[target.toString()]);
-
-    setBoard([...board]);
-    setBoardState(BOARDSTATE.pathFound);
-    setMessage("found target");
-  };
+    prevRemainder.current = currentRemainder;
+    requestAnimationFrame(executePathFindingStep);
+  }
 
   return (
     <>
-      <Banner>
+      <Banner
+        selectAlgorithm={selectAlgorithm}
+      >
         <ul className="tools-list">
           {tools.map((t: tool, index) => (
             <ToolButton

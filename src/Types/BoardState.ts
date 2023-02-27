@@ -1,4 +1,5 @@
 export enum BOARDSTATE {
-  pathFound,
-  drawing
+  drawing,
+  searching,
+  searchComplete,
 }
