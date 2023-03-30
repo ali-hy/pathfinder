@@ -1,86 +1,63 @@
-import { gridHeight, gridWidth } from "../../Components/Pathfinder";
 import { BOARDSTATE } from "../BoardState";
 import CellData from "../CellData";
 import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
+import { ALGORITHM } from "./ALGORITHM";
 import { PathfindingAlgorithm } from "./PathfindingAlgorithm";
 
-export class BFSpathfinder extends PathfindingAlgorithm{
-  posQueue:Pos[] = [];
-  
-  board:CellData[][];
-  readonly boardWidth:number;
-  readonly boardHeight:number;
+export class BfsPathfinder extends PathfindingAlgorithm {
+  name = "BFS";
+  index = ALGORITHM.bfs;
+  posQueue: Pos[];
 
-  constructor(board?:CellData[][]){
-    super();
-    this.board = board;
-    this.boardWidth = board[0].length;
-    this.boardHeight = board.length;
-  }
-  
-  getAdjacentPositions({ x, y }: Pos){
-    const adjacentPositions: Pos[] = [];
-    if (x > 0) {
-      adjacentPositions.push(new Pos(x - 1, y));
-    }
-    if (x < gridWidth - 1) {
-      adjacentPositions.push(new Pos( x + 1, y));
-    }
-    if (y > 0) {
-      adjacentPositions.push(new Pos(x, y - 1));
-    }
-    if (y < gridHeight - 1) {
-      adjacentPositions.push(new Pos(x, y + 1));
-    }
-    return adjacentPositions;
-  };
-
-  initPathfinding(startingPosition:Pos){
-    const adjacentPositions = this.getAdjacentPositions(startingPosition);
-    this.posQueue.push(...adjacentPositions);
-    this.posQueue.forEach(position => {
-      this.paths[position.toString()] = [position];
-    });
+  initPathfinding(board: CellData[][], startingPosition: Pos) {
+    super.initPathfinding(board, startingPosition);
+    this.initPosQueue();
   }
 
-  getCellAtPos ({ x, y }: Pos){
-    return this.board[y][x];
-  };
+  initPosQueue() {
+    this.posQueue = [this.startingPosition];
+  }
 
-  executeStep(){
-    if(this.posQueue.length <= 0){
-      return;
+  //STEP
+  protected noMoreSteps() {
+    return this.posQueue.length <= 0;
+  }
+
+  executeStep() {
+    if (this.noMoreSteps()) {
+      return {
+        board: this.board,
+        boardState: BOARDSTATE.searchComplete
+      };
     }
 
-    const nextSearchLevel:Pos[] = [];
-    
-    for(const pos of this.posQueue){
-      const currentCell = this.getCellAtPos(pos);
+    const nextLevel: Set<Pos> = new Set();
 
-      if(!currentCell.isTravelValid()){
-        continue;
-      }
-      if(currentCell.state === CELLSTATE.target){
-        this.targetPosition = pos;
+    for (const currentPos of this.posQueue) {
+      const currentCell = this.getCellAtPos(currentPos);
+
+      if (currentCell.state === CELLSTATE.target) {
+        this.foundTargetPosition = currentPos;
+        // MAYBE RETURN
         break;
       }
 
-      currentCell.visit();
+      if (currentCell.isTravelValid()) {
+        currentCell.visit();
+      }
 
-      const currentPath = this.paths[currentCell.position.toString()];
-      const adjacentPositions = this.getAdjacentPositions(pos);
+      const adjacentCells = this.getValidAdjacentCells(currentPos);
+      const adjacentPositions = adjacentCells.map(cell => cell.position);
 
-      nextSearchLevel.push(...adjacentPositions);
-      adjacentPositions.forEach(adjacentPosition => {
-        this.paths[adjacentPosition.toString()] = currentPath.concat(adjacentPosition);
-      });
-    };
-    this.posQueue = nextSearchLevel;
+      adjacentPositions.forEach((pos) => nextLevel.add(pos));
+      adjacentCells.forEach(cell => cell.setParent(currentCell));
+    }
 
-    var boardState:BOARDSTATE;
+    this.posQueue = Array.from(nextLevel);
 
-    if(this.targetPosition || this.posQueue.length === 0){
+    var boardState: BOARDSTATE;
+    if (this.foundTargetPosition || this.posQueue.length === 0) {
       boardState = BOARDSTATE.searchComplete;
     } else {
       boardState = BOARDSTATE.searching;
@@ -89,7 +66,7 @@ export class BFSpathfinder extends PathfindingAlgorithm{
     return {
       board: [...this.board],
       boardState: boardState,
-      path: this.targetPosition ? this.paths[this.targetPosition.toString()] : undefined
+      path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     };
   }
 }

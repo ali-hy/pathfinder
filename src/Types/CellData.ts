@@ -4,13 +4,37 @@ import Pos from "./Pos";
 export default class CellData {
     position:Pos;
     state:CELLSTATE = CELLSTATE.empty;
+    netAncestorWeight:number = 0;
+    private parent?:CellData = undefined;
     
     constructor(position:Pos){
         this.position = position;
     }
 
+    getCurrentPath(){
+        if(this.parent === undefined){
+            return [this.position]
+        }
+        return [...this.parent.getCurrentPath(), this.position];
+    }
+
+    setParent(parent:CellData){
+        if(this.parent === undefined){
+            this.parent = parent;
+            this.netAncestorWeight = parent.netAncestorWeight + 1;
+        } else {
+            const change = parent.netAncestorWeight < this.parent.netAncestorWeight;
+            this.parent = change ? parent : this.parent;
+        }
+    }
+
+    clearParent(){
+        this.parent = undefined;
+        this.netAncestorWeight = 0;
+    }
+
     visit(){
-        this.state = CELLSTATE.visited;
+            this.state = CELLSTATE.visited;
     }
 
     empty(){
@@ -18,7 +42,7 @@ export default class CellData {
     }
 
     walk(){
-        this.state = CELLSTATE.path;
+            this.state = CELLSTATE.path;
     }
 
     isTravelValid(){

@@ -6,11 +6,12 @@ import tools, { placeTool, TOOL, tool } from "../Types/Tools";
 import Banner from "./Banner/Banner";
 import Board from "./Board/Board";
 import ToolButton from "./Banner/ToolButton";
-import useForceUpdate from "../Hooks/useForceUpdate";
 import CellData from "../Types/CellData";
 import { BOARDSTATE } from "../Types/BoardState";
 import { ALGORITHM } from "../Types/algorithms/ALGORITHM";
 import { PathfindingAlgorithm } from "../Types/algorithms/PathfindingAlgorithm";
+import { BfsPathfinder } from "../Types/algorithms/BfsPathfinder";
+import DfsPathfinder from "../Types/algorithms/DfsPathfinder";
 
 // ------ INITIAL GRID DATA -------
 export const gridHeight = 40;
@@ -31,12 +32,11 @@ export default function PathFinder() {
   const [boardPosition, setBoardPosition] = useState<Pos>({ x: 0, y: 0 });
   const [board, setBoard] = useState(useMemo(generateBoard, []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
-  const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.makeDo);
+  const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
   const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
   const [startPosition, setStartPosition] = useState<Pos>();
   const [targetPosition, setTargetPosition] = useState<Pos>();
   const [message, setMessage] = useState<string>();
-  const forceUpdate = useForceUpdate();
 
   const startTime = useRef<number>(-1);
   const searchIntervalTime = useRef<number>(50);
@@ -45,7 +45,8 @@ export default function PathFinder() {
 
   // ---- UTILITY FUNCTIONS ----
   const initAlgorithms = () => {
-    algorithms[ALGORITHM.makeDo] = new PathfindingAlgorithm(board);
+    algorithms[ALGORITHM.bfs] = new BfsPathfinder();
+    algorithms[ALGORITHM.dfs] = new DfsPathfinder();
     setAlgorithms([...algorithms]);
   }
 
@@ -57,6 +58,7 @@ export default function PathFinder() {
   const resetPathSearch = (): void => {
     board.forEach((row) => {
       row.forEach((cell) => {
+        cell.clearParent();
         if (cell.state === CELLSTATE.visited || cell.state === CELLSTATE.path) {
           cell.empty();
         }
@@ -69,6 +71,7 @@ export default function PathFinder() {
 
   const fillInPath = (path:Pos[]) => {
     path.pop();
+    path.shift();
     var startTime:number, 
     prevRemainder = {current: -1},
     indexInPath = {current: 0};
@@ -131,59 +134,66 @@ export default function PathFinder() {
     setBoard(nextBoard);
   };
 
-  const getAdjacentPositions = ({ x, y }: Pos) => {
-    const adjacentPositions: Pos[] = [];
-    if (x > 0) {
-      adjacentPositions.push(new Pos(x - 1, y));
-    }
-    if (x < gridWidth - 1) {
-      adjacentPositions.push(new Pos( x + 1, y));
-    }
-    if (y > 0) {
-      adjacentPositions.push(new Pos(x, y - 1));
-    }
-    if (y < gridHeight - 1) {
-      adjacentPositions.push(new Pos(x, y + 1));
-    }
-    return adjacentPositions;
-  };
-
   const getCellAtPos = ({ x, y }: Pos) => {
     return board[y][x];
   };
 
   const initPathFinding = () => {
-    window.requestAnimationFrame(executePathFindingStep);
-    algorithms[selectedAlgorithm] = new PathfindingAlgorithm(board);
-    algorithms[selectedAlgorithm].initPathfinding(startPosition);
+    algorithms[selectedAlgorithm].initPathfinding(board, startPosition);
   }
   
-  const executePathFindingStep = (time:number) => {
+  const executeAnimatedStep = (time?:number) => {
     if(startTime.current < 0){
       startTime.current = time;
-      console.log("start time: ", startTime.current);
     }
     const elapsedTime = time - startTime.current;
     const currentRemainder = elapsedTime % searchIntervalTime.current;
 
     if(currentRemainder < prevRemainder.current){
-      const {board, boardState, path} = algorithms[selectedAlgorithm].executeStep();
-
-      setBoard(board);
-      setBoardState(boardState);
-      if(boardState === BOARDSTATE.searchComplete){
-        fillInPath(path);
+      if(executePathfindingStep() === BOARDSTATE.searchComplete){
         return;
       }
     }
+
     prevRemainder.current = currentRemainder;
-    requestAnimationFrame(executePathFindingStep);
+    requestAnimationFrame(executeAnimatedStep);
   }
+
+  const playAnimation = () => {
+    if(boardState === BOARDSTATE.drawing){
+      initPathFinding();
+    }
+    window.requestAnimationFrame(executeAnimatedStep);
+  }
+
+  const executePathfindingStep = () => {
+    const {board, boardState, path} = algorithms[selectedAlgorithm].executeStep();
+
+    setBoard(board);
+    setBoardState(boardState);
+    if(boardState === BOARDSTATE.searchComplete){
+      if(path){
+        fillInPath(path);
+      }
+    }
+
+    return boardState;
+  }
+
+  const executeOneStep = () => {
+    if(boardState === BOARDSTATE.drawing){
+      initPathFinding();
+    }
+    executePathfindingStep();
+  }
+
+  const disableSearch = boardState === BOARDSTATE.searchComplete;
 
   return (
     <>
       <Banner
         selectAlgorithm={selectAlgorithm}
+        algorithms={algorithms}
       >
         <ul className="tools-list">
           {tools.map((t: tool, index) => (
@@ -198,8 +208,21 @@ export default function PathFinder() {
           ))}
         </ul>
         <div className="d-flex align-items-center">
-          <button onClick={resetPathSearch}>Reset Search</button>
-          <button onClick={() => initPathFinding()}>Find Path</button>
+          <button className="btn btn-outline-primary me-2" onClick={resetPathSearch}>Reset Search</button>
+          <button 
+            className="btn btn-primary me-2" 
+            onClick={() => playAnimation()}
+            disabled={disableSearch}
+          >
+            Find Path
+          </button>
+          <button 
+            className="btn btn-primary next-btn fw-bold" 
+            onClick={() => executeOneStep()}
+            disabled={disableSearch}
+          >
+              &gt;
+          </button>
           {message && <p className="message">{message}</p>}
         </div>
       </Banner>

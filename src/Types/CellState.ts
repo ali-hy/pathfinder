@@ -1,8 +1,12 @@
 export enum CELLSTATE{
+    //Travel Valid
     empty,
-    target,
+    debugging,
+    target, //last travel Valid
+
+    //Not Travil Valid
+    searchStart,
     wall,
     path,
     visited,
-    searchStart,
 }
