@@ -5,9 +5,15 @@ export interface PriorityQueueNode<T> {
 
 export default class PriorityQueue<T> {
   private heap: PriorityQueueNode<T>[];
+  private set: Set<T>;
+
+  get size(){
+    return this.heap.length;
+  }
 
   constructor() {
     this.heap = [];
+    this.set = new Set();
   }
 
   private getParentIndex(index: number): number {
@@ -60,6 +66,11 @@ export default class PriorityQueue<T> {
 
   enqueue(value: T, priority: number): void {
     const node: PriorityQueueNode<T> = { value, priority };
+    const prevSize = this.set.size;
+    this.set.add(value);
+    if(this.set.size === prevSize){
+      return;
+    }
     this.heap.push(node);
     this.bubbleUp(this.heap.length - 1);
   }
@@ -69,20 +80,18 @@ export default class PriorityQueue<T> {
       return undefined;
     }
     if (this.heap.length === 1) {
+      this.set.clear();
       return this.heap.pop()!.value;
     }
     const result = this.heap[0].value;
     this.heap[0] = this.heap.pop()!;
+    this.set.delete(result);
     this.bubbleDown(0);
     return result;
   }
 
   peek(): T | undefined {
     return this.heap.length > 0 ? this.heap[0].value : undefined;
-  }
-
-  size(): number {
-    return this.heap.length;
   }
 
   isEmpty(): boolean {

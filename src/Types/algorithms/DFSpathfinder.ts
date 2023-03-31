@@ -43,12 +43,15 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
     if(currentCell.state === CELLSTATE.target){
       this.foundTargetPosition = currentCell.position;
     } else {
-      const adjacentPositions = this.getValidAdjacentCells(currentCell.position).map(cell => cell.position);
-      const currentPath = this.getPathToCell(currentCell);
+      const visitedAdjacentCells = this.getVisitedAdjacentCells(currentCell.position);
+      const validAdjacentCells = this.getValidAdjacentCells(currentCell.position);
+      const adjacentPositions = validAdjacentCells.map(cell => cell.position);
+
       this.posStack.push(...adjacentPositions);
-      adjacentPositions.forEach(adjacentPosition => {
-        this.paths[adjacentPosition.toString()] = currentPath.concat(adjacentPosition);
+      validAdjacentCells.concat(visitedAdjacentCells).forEach(cell => {
+        cell.updateParent(currentCell);
       });
+
       currentCell.visit();
     }
 
@@ -62,7 +65,7 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
     return {
       board: [...this.board],
       boardState: boardState,
-      path: this.foundTargetPosition ? this.paths[this.foundTargetPosition.toString()] : undefined
+      path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     };
   }
 }

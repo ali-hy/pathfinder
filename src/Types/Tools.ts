@@ -42,7 +42,7 @@ export abstract class tool{
     getIcon(){return this.icon}
     getCursorClass():string{return this.cursorClass}
 
-    abstract onMouseDown(e:MouseEvent):actionDetails;
+    abstract onMouseDown(obj:any):actionDetails;
     onMouseMove(newPosition:Pos):actionDetails{return {type: ACTION.none}};
     onMouseUp():actionDetails{ return {type:ACTION.none} };
     
@@ -73,16 +73,16 @@ export class handTool extends tool{
     onMouseDown(e:MouseEvent):actionDetails{
         this.setCursorClass('grabbing');
         this.active = true;
-        this.prevPosition = {x: e.clientX, y: e.clientY};
+        this.prevPosition = new Pos(e.clientX, e.clientY);
 
         return {type: ACTION.rerenderTool}
     }
     onMouseMove(newPosition:Pos):actionDetails{
-        const result =  {type: ACTION.move, payload:{
-            x: newPosition.x - this.prevPosition.x, 
-            y: newPosition.y - this.prevPosition.y
-        }};
-        this.prevPosition = {...newPosition};
+        const result =  {type: ACTION.move, payload:new Pos(
+            newPosition.x - this.prevPosition.x,
+            newPosition.y - this.prevPosition.y
+        )};
+        this.prevPosition =  new Pos(newPosition.x, newPosition.y);
         return result;
     }
     onMouseUp():actionDetails{
@@ -115,26 +115,26 @@ export class placeTool extends tool{
         this.onlyOne = onlyOne;
     }
 
-    onMouseDown(cell:Pos):actionDetails {
+    onMouseDown(pos:Pos):actionDetails {
         this.active = true;
         if(!this.onlyOne)
             return {type: ACTION.place, payload: {
-                cell: cell,
+                cell: pos,
                 newState: this.itemPlaced
             }}
         if(this.previousPosition === undefined){
-            this.previousPosition = cell;
+            this.previousPosition = pos;
         }
         const result = {
             type: ACTION.place, payload: 
             {
-                cell: cell,
+                cell: pos,
                 newState: this.itemPlaced,
                 replacePrev: true,
                 previousPosition: {...this.previousPosition}
             }
         };
-        this.previousPosition = cell;
+        this.previousPosition = pos;
         return result;
     }
 

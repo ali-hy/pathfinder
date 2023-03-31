@@ -4,6 +4,7 @@ import Pos from "./Pos";
 export default class CellData {
     position:Pos;
     state:CELLSTATE = CELLSTATE.empty;
+    weight = 1;
     netAncestorWeight:number = 0;
     private parent?:CellData = undefined;
     
@@ -21,13 +22,19 @@ export default class CellData {
     setParent(parent:CellData){
         if(this.parent === undefined){
             this.parent = parent;
-            this.netAncestorWeight = parent.netAncestorWeight + 1;
+        }
+    }
+
+    updateParent(parent:CellData){
+        if(this.parent === undefined){
+            this.parent = parent;
+            this.netAncestorWeight = parent.netAncestorWeight + parent.weight;
         } else {
             const change = parent.netAncestorWeight < this.parent.netAncestorWeight;
             this.parent = change ? parent : this.parent;
         }
     }
-
+    
     clearParent(){
         this.parent = undefined;
         this.netAncestorWeight = 0;

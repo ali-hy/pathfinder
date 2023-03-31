@@ -74,7 +74,7 @@ export default function Board(props:BoardProps){
     const mouseMoveHandler = useCallback((e:MouseEvent) => {
         const tool = selectedToolRef.current;
         if(tool.active){
-            takeAction(tool.onMouseMove({x: e.clientX, y: e.clientY}))
+            takeAction(tool.onMouseMove(new Pos(e.clientX, e.clientY)))
         };
     },[])
     const handleKeyDown = useCallback((e:KeyboardEvent) => {

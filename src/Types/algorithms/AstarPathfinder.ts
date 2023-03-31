@@ -1,11 +1,14 @@
 import { BOARDSTATE } from "../BoardState";
 import CellData from "../CellData";
+import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
 import PriorityQueue from "../util/PriorityQueue";
+import { ALGORITHM } from "./ALGORITHM";
 import { PathfindingAlgorithm, pathfindingData } from "./PathfindingAlgorithm";
 
 export default class AstarPathfinder extends PathfindingAlgorithm{
   name = "A*";
+  index = ALGORITHM.aStar;
   
   targetPosition:Pos;
   posQueue:PriorityQueue<Pos>;
@@ -18,7 +21,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
 
   private initPosQueue(){
     this.posQueue = new PriorityQueue();
-    this.posQueue.enqueue(this.startingPosition, this.getHeuristic(this.startingPosition));
+    this.posQueue.enqueue(this.startingPosition, this.getPriority(this.startingPosition));
   }
 
   private getHeuristic(pos:Pos):number{
@@ -26,7 +29,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
   }
 
   private getPriority(pos:Pos):number{
-    return this.getPathToPosition(pos).length + this.getHeuristic(pos);
+    return this.getCellAtPos(pos).netAncestorWeight + this.getHeuristic(pos);
   }
 
   noMoreSteps(): boolean {
@@ -34,7 +37,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
   }
 
   executeStep(): pathfindingData {
-    if(this.noMoreSteps()){
+    if (this.noMoreSteps()) { 
       return {
         board: this.board,
         boardState: BOARDSTATE.searchComplete
@@ -43,13 +46,37 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
 
     const currentPos = this.posQueue.dequeue();
     const currentCell = this.getCellAtPos(currentPos);
-
-    const validAdjacentCells = this.getValidAdjacentCells(currentPos);
-    const getVisitedAdjacentCells = this.getVisitedAdjacentCells(currentPos);
-
     
+    if (currentCell.state === CELLSTATE.target) {
+      this.foundTargetPosition = currentPos;
+      return {
+        board: [...this.board],
+        boardState: BOARDSTATE.searchComplete,
+        path: this.getPathToCell(currentCell)
+      }
+    }
 
+    if (currentCell.isTravelValid()) {
+      currentCell.visit();
+    }
 
-    throw new Error("Method not implemented.");
+    const adjacentCells = this.getValidAdjacentCells(currentPos);
+    const adjacentPositions = adjacentCells.map(cell => cell.position);
+
+    adjacentCells.forEach(cell => cell.updateParent(currentCell));
+    adjacentPositions.forEach((pos) => this.posQueue.enqueue(pos, this.getPriority(pos)));
+
+    var boardState: BOARDSTATE;
+    if (this.posQueue.size === 0) {
+      boardState = BOARDSTATE.searchComplete;
+    } else {
+      boardState = BOARDSTATE.searching;
+    }
+
+    return {
+      board: [...this.board],
+      boardState: boardState,
+      path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
+    }
   }
 }

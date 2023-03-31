@@ -10,8 +10,10 @@ import CellData from "../Types/CellData";
 import { BOARDSTATE } from "../Types/BoardState";
 import { ALGORITHM } from "../Types/algorithms/ALGORITHM";
 import { PathfindingAlgorithm } from "../Types/algorithms/PathfindingAlgorithm";
-import { BfsPathfinder } from "../Types/algorithms/BfsPathfinder";
-import DfsPathfinder from "../Types/algorithms/DfsPathfinder";
+import BfsPathfinder from "../Types/algorithms/BFSpathfinder";
+import DfsPathfinder from "../Types/algorithms/DFSpathfinder";
+import DijkstrasPathfinder from "../Types/algorithms/DijkstrasPathfinder";
+import AstarPathfinder from "../Types/algorithms/AstarPathfinder";
 
 // ------ INITIAL GRID DATA -------
 export const gridHeight = 40;
@@ -29,7 +31,7 @@ function generateBoard() {
 
 export default function PathFinder() {
   const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
-  const [boardPosition, setBoardPosition] = useState<Pos>({ x: 0, y: 0 });
+  const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0,0));
   const [board, setBoard] = useState(useMemo(generateBoard, []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
   const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
@@ -47,6 +49,8 @@ export default function PathFinder() {
   const initAlgorithms = () => {
     algorithms[ALGORITHM.bfs] = new BfsPathfinder();
     algorithms[ALGORITHM.dfs] = new DfsPathfinder();
+    algorithms[ALGORITHM.dijkstras] = new DijkstrasPathfinder();
+    algorithms[ALGORITHM.aStar] = new AstarPathfinder();
     setAlgorithms([...algorithms]);
   }
 
@@ -139,7 +143,7 @@ export default function PathFinder() {
   };
 
   const initPathFinding = () => {
-    algorithms[selectedAlgorithm].initPathfinding(board, startPosition);
+    algorithms[selectedAlgorithm].initPathfinding(board, startPosition, targetPosition);
   }
   
   const executeAnimatedStep = (time?:number) => {
@@ -150,8 +154,10 @@ export default function PathFinder() {
     const currentRemainder = elapsedTime % searchIntervalTime.current;
 
     if(currentRemainder < prevRemainder.current){
-      if(executePathfindingStep() === BOARDSTATE.searchComplete){
-        return;
+      for(let i = 0; i < 10; i++){
+        if(executePathfindingStep() === BOARDSTATE.searchComplete){
+          return;
+        }
       }
     }
 

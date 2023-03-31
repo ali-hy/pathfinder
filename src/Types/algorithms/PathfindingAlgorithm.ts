@@ -19,6 +19,7 @@ export abstract class PathfindingAlgorithm{
   boardHeight:number;
   boardWidth:number;
   startingPosition:Pos;
+  allowDiagonals:boolean;
 
   // Process Vars
   currentCell:CellData;
@@ -83,18 +84,18 @@ export abstract class PathfindingAlgorithm{
     return adjacentPositions;
   };
 
-  getAdjacentCells({x, y}:Pos){
-    return this.getAdjacentPositions({x, y})
+  getAdjacentCells(pos:Pos){
+    return this.getAdjacentPositions(pos)
     .map(pos => this.getCellAtPos(pos));
   }
 
-  getValidAdjacentCells({x,y}:Pos){
-    return this.getAdjacentCells({x, y})
+  getValidAdjacentCells(pos:Pos){
+    return this.getAdjacentCells(pos)
     .filter(cell => cell.isTravelValid());
   }
 
-  getVisitedAdjacentCells({x,y}:Pos){
-    return this.getAdjacentCells({x, y})
+  getVisitedAdjacentCells(pos:Pos){
+    return this.getAdjacentCells(pos)
     .filter(cell => cell.state === CELLSTATE.visited);
   }
 

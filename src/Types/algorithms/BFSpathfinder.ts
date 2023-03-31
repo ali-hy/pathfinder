@@ -5,10 +5,11 @@ import Pos from "../Pos";
 import { ALGORITHM } from "./ALGORITHM";
 import { PathfindingAlgorithm } from "./PathfindingAlgorithm";
 
-export class BfsPathfinder extends PathfindingAlgorithm {
+export default class BfsPathfinder extends PathfindingAlgorithm {
   name = "BFS";
   index = ALGORITHM.bfs;
   posQueue: Pos[];
+  posSet: Set<Pos>;
 
   initPathfinding(board: CellData[][], startingPosition: Pos) {
     super.initPathfinding(board, startingPosition);
@@ -17,6 +18,8 @@ export class BfsPathfinder extends PathfindingAlgorithm {
 
   initPosQueue() {
     this.posQueue = [this.startingPosition];
+    this.posSet = new Set();
+    this.posSet.add(this.startingPosition);
   }
 
   //STEP
@@ -24,37 +27,52 @@ export class BfsPathfinder extends PathfindingAlgorithm {
     return this.posQueue.length <= 0;
   }
 
+  protected enqueuePos(pos:Pos){
+    const prevSize = this.posSet.size;
+    this.posSet.add(pos);
+    if(prevSize < this.posSet.size){
+      this.posQueue.push(pos);
+    }
+  }
+
+  protected dequeuePos():Pos{
+    if(!this.posQueue.length){
+      return undefined;
+    }
+    const result = this.posQueue.shift();
+    this.posSet.delete(result);
+    return result;
+  }
+
   executeStep() {
     if (this.noMoreSteps()) {
       return {
         board: this.board,
         boardState: BOARDSTATE.searchComplete
-      };
+      }
     }
 
-    const nextLevel: Set<Pos> = new Set();
-
-    for (const currentPos of this.posQueue) {
-      const currentCell = this.getCellAtPos(currentPos);
-
-      if (currentCell.state === CELLSTATE.target) {
-        this.foundTargetPosition = currentPos;
-        // MAYBE RETURN
-        break;
+    const currentPos = this.dequeuePos();
+    const currentCell = this.getCellAtPos(currentPos);
+    
+    if (currentCell.state === CELLSTATE.target) {
+      this.foundTargetPosition = currentPos;
+      return {
+        board: [...this.board],
+        boardState: BOARDSTATE.searchComplete,
+        path: this.getPathToCell(currentCell)
       }
-
-      if (currentCell.isTravelValid()) {
-        currentCell.visit();
-      }
-
-      const adjacentCells = this.getValidAdjacentCells(currentPos);
-      const adjacentPositions = adjacentCells.map(cell => cell.position);
-
-      adjacentPositions.forEach((pos) => nextLevel.add(pos));
-      adjacentCells.forEach(cell => cell.setParent(currentCell));
     }
 
-    this.posQueue = Array.from(nextLevel);
+    if (currentCell.isTravelValid()) {
+      currentCell.visit();
+    }
+
+    const adjacentCells = this.getValidAdjacentCells(currentPos);
+    const adjacentPositions = adjacentCells.map(cell => cell.position);
+
+    adjacentPositions.forEach((pos) => this.enqueuePos(pos));
+    adjacentCells.forEach(cell => cell.setParent(currentCell));
 
     var boardState: BOARDSTATE;
     if (this.foundTargetPosition || this.posQueue.length === 0) {
@@ -67,6 +85,6 @@ export class BfsPathfinder extends PathfindingAlgorithm {
       board: [...this.board],
       boardState: boardState,
       path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
-    };
+    }
   }
 }
