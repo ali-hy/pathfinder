@@ -1,5 +1,6 @@
+import copyBoard from "../../utils/copyBoard";
+import BoardData from "../BoardData";
 import { BOARDSTATE } from "../BoardState";
-import CellData from "../CellData";
 import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
 import { ALGORITHM } from "./ALGORITHM";
@@ -11,7 +12,7 @@ export default class DijkstrasPathfinder extends PathfindingAlgorithm {
   posQueue: Pos[];
   posSet: Set<Pos>;
 
-  initPathfinding(board: CellData[][], startingPosition: Pos) {
+  initPathfinding(board: BoardData, startingPosition: Pos) {
     super.initPathfinding(board, startingPosition);
     this.initPosQueue();
   }
@@ -58,7 +59,7 @@ export default class DijkstrasPathfinder extends PathfindingAlgorithm {
     if (currentCell.state === CELLSTATE.target) {
       this.foundTargetPosition = currentPos;
       return {
-        board: [...this.board],
+        board: copyBoard(this.board),
         boardState: BOARDSTATE.searchComplete,
         path: this.getPathToCell(currentCell)
       }
@@ -68,11 +69,11 @@ export default class DijkstrasPathfinder extends PathfindingAlgorithm {
       currentCell.visit();
     }
     
-    const adjacentCells = this.getValidAdjacentCells(currentPos);
-    const adjacentPositions = adjacentCells.map(cell => cell.position);
+    const edges = currentCell.edgesToValid();
+    const adjacentPositions = edges.map(({end}) => end.position);
 
     adjacentPositions.forEach((pos) => this.enqueuePos(pos));
-    adjacentCells.forEach(cell => cell.updateParent(currentCell));
+    edges.forEach((edge) => edge.end.updateParent(edge));
 
     var boardState: BOARDSTATE;
     if (this.foundTargetPosition || this.posQueue.length === 0) {
@@ -82,7 +83,7 @@ export default class DijkstrasPathfinder extends PathfindingAlgorithm {
     }
 
     return {
-      board: [...this.board],
+      board: copyBoard(this.board),
       boardState: boardState,
       path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     }

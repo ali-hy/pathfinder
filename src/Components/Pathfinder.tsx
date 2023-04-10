@@ -6,7 +6,6 @@ import tools, { placeTool, TOOL, tool } from "../Types/Tools";
 import Banner from "./Banner/Banner";
 import Board from "./Board/Board";
 import ToolButton from "./Banner/ToolButton";
-import CellData from "../Types/CellData";
 import { BOARDSTATE } from "../Types/BoardState";
 import { ALGORITHM } from "../Types/algorithms/ALGORITHM";
 import { PathfindingAlgorithm } from "../Types/algorithms/PathfindingAlgorithm";
@@ -14,23 +13,19 @@ import BfsPathfinder from "../Types/algorithms/BFSpathfinder";
 import DfsPathfinder from "../Types/algorithms/DFSpathfinder";
 import DijkstrasPathfinder from "../Types/algorithms/DijkstrasPathfinder";
 import AstarPathfinder from "../Types/algorithms/AstarPathfinder";
+import BoardData from "../Types/BoardData";
+import copyBoard from "../utils/copyBoard";
 
 // ------ INITIAL GRID DATA -------
 export const gridHeight = 40;
 export const gridWidth = 70;
 function generateBoard() {
-  const emptyBoard: CellData[][] = new Array(gridHeight);
-  for (let y = 0; y < emptyBoard.length; y++) {
-    emptyBoard[y] = new Array(gridWidth);
-    for (let x = 0; x < emptyBoard[y].length; x++) {
-      emptyBoard[y][x] = new CellData(new Pos(x,y));
-    }
-  }
-  return emptyBoard;
+  return new BoardData(gridHeight, gridWidth);
 }
 
 export default function PathFinder() {
   const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0,0));
   const [board, setBoard] = useState(useMemo(generateBoard, []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
@@ -68,7 +63,7 @@ export default function PathFinder() {
         }
       });
     });
-    setBoard([...board]);
+    setBoard(copyBoard(board));
     setMessage("");
     setBoardState(BOARDSTATE.drawing);
   };
@@ -93,7 +88,7 @@ export default function PathFinder() {
       if(currentRemainder < prevRemainder.current){
         const currentCell = getCellAtPos(path[indexInPath.current++]);
         currentCell.walk();
-        setBoard([...board]);
+        setBoard(copyBoard(board));
       }
       prevRemainder.current = currentRemainder;
       requestAnimationFrame(walkOneStep);
@@ -109,18 +104,17 @@ export default function PathFinder() {
     if (boardState === BOARDSTATE.searchComplete){
       resetPathSearch();
     }
-    const nextBoard = [...board];
+    const nextBoard = copyBoard(board);
     const { payload } = selectedTool.onMouseDown(new Pos( x,y ));
     if (payload.replacePrev) {
-      const { x: prevX, y: prevY } = payload.previousPosition;
-      nextBoard[prevY][prevX].state = CELLSTATE.empty;
+      nextBoard.cellAtPos(payload.previousPosition).state = CELLSTATE.empty;
       if (payload.newState === CELLSTATE.searchStart) {
         setStartPosition(new Pos( x,y ));
       } else if (payload.newState === CELLSTATE.target) {
         setTargetPosition(new Pos( x,y ));
       }
     }
-    nextBoard[y][x].state = payload.newState;
+    nextBoard.cellAtPos({x,y}).state = payload.newState;
     setBoard(nextBoard);
   };
 
@@ -132,14 +126,14 @@ export default function PathFinder() {
     ) {
       return;
     }
-    const nextBoard = [...board];
+    const nextBoard = copyBoard(board);
     const { payload } = selectedTool.onMouseEnter(new Pos( x,y ));
-    nextBoard[y][x].state = payload.newState;
+    nextBoard.cellAtPos({x,y}).state = payload.newState;
     setBoard(nextBoard);
   };
 
   const getCellAtPos = ({ x, y }: Pos) => {
-    return board[y][x];
+    return board.cellAtPos({x,y});
   };
 
   const initPathFinding = () => {

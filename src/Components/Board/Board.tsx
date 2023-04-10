@@ -8,10 +8,10 @@ import Pos from '../../Types/Pos';
 import { css, StyleSheet } from 'aphrodite';
 import useUpdatingRef from '../../Hooks/useUpdatingRef';
 import useForceUpdate from '../../Hooks/useForceUpdate';
-import CellData from '../../Types/CellData';
+import BoardData from '../../Types/BoardData';
 
 interface BoardProps{
-    board:CellData[][];
+    board:BoardData;
     boardPosition:Pos;
     selectedTool:tool;
     setSelectedTool:Function;
@@ -68,7 +68,6 @@ export default function Board(props:BoardProps){
         else if (e.button === 1){ // middle mb up
             tools[TOOL.hand].onMouseUp();
             props.setSelectedTool(prevToolRef.current);
-            // setPrevTool(undefined);
         }
     },[])
     const mouseMoveHandler = useCallback((e:MouseEvent) => {

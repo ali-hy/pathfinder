@@ -1,5 +1,6 @@
+import copyBoard from "../../utils/copyBoard";
+import BoardData from "../BoardData";
 import { BOARDSTATE } from "../BoardState";
-import CellData from "../CellData";
 import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
 import { ALGORITHM } from "./ALGORITHM";
@@ -11,7 +12,7 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
   posQueue: Pos[];
   posSet: Set<Pos>;
 
-  initPathfinding(board: CellData[][], startingPosition: Pos) {
+  initPathfinding(board: BoardData, startingPosition: Pos) {
     super.initPathfinding(board, startingPosition);
     this.initPosQueue();
   }
@@ -22,7 +23,6 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
     this.posSet.add(this.startingPosition);
   }
 
-  //STEP
   protected noMoreSteps() {
     return this.posQueue.length <= 0;
   }
@@ -58,7 +58,7 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
     if (currentCell.state === CELLSTATE.target) {
       this.foundTargetPosition = currentPos;
       return {
-        board: [...this.board],
+        board: copyBoard(this.board),
         boardState: BOARDSTATE.searchComplete,
         path: this.getPathToCell(currentCell)
       }
@@ -68,11 +68,11 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
       currentCell.visit();
     }
 
-    const adjacentCells = this.getValidAdjacentCells(currentPos);
-    const adjacentPositions = adjacentCells.map(cell => cell.position);
+    const edges = currentCell.edgesToValid();
+    const adjacentPositions = edges.map(({end}) => end.position);
 
     adjacentPositions.forEach((pos) => this.enqueuePos(pos));
-    adjacentCells.forEach(cell => cell.setParent(currentCell));
+    edges.forEach(({end}) => end.setParent(currentCell));
 
     var boardState: BOARDSTATE;
     if (this.foundTargetPosition || this.posQueue.length === 0) {
@@ -82,7 +82,7 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
     }
 
     return {
-      board: [...this.board],
+      board: copyBoard(this.board),
       boardState: boardState,
       path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     }
