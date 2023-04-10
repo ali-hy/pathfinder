@@ -1,5 +1,6 @@
+import copyBoard from "../../utils/copyBoard";
+import BoardData from "../BoardData";
 import { BOARDSTATE } from "../BoardState";
-import CellData from "../CellData";
 import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
 import PriorityQueue from "../util/PriorityQueue";
@@ -13,7 +14,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
   targetPosition:Pos;
   posQueue:PriorityQueue<Pos>;
 
-  initPathfinding(board:CellData[][], startingPosition:Pos, targetPosition:Pos){
+  initPathfinding(board:BoardData, startingPosition:Pos, targetPosition:Pos){
     super.initPathfinding(board,startingPosition);
     this.targetPosition = targetPosition;
     this.initPosQueue();
@@ -29,7 +30,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
   }
 
   private getPriority(pos:Pos):number{
-    return this.getCellAtPos(pos).netAncestorWeight + this.getHeuristic(pos);
+    return this.getCellAtPos(pos).netDistance + this.getHeuristic(pos);
   }
 
   noMoreSteps(): boolean {
@@ -50,7 +51,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
     if (currentCell.state === CELLSTATE.target) {
       this.foundTargetPosition = currentPos;
       return {
-        board: [...this.board],
+        board: copyBoard(this.board),
         boardState: BOARDSTATE.searchComplete,
         path: this.getPathToCell(currentCell)
       }
@@ -60,11 +61,12 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
       currentCell.visit();
     }
 
-    const adjacentCells = this.getValidAdjacentCells(currentPos);
-    const adjacentPositions = adjacentCells.map(cell => cell.position);
+    const validEdges = currentCell.edgesToValid();
+    const edges = validEdges.concat(currentCell.edgesToVisited());
+    const validAdjacentPositions = validEdges.map(({end}) => end.position);
 
-    adjacentCells.forEach(cell => cell.updateParent(currentCell));
-    adjacentPositions.forEach((pos) => this.posQueue.enqueue(pos, this.getPriority(pos)));
+    edges.forEach((edge) => edge.end.updateParent(edge));
+    validAdjacentPositions.forEach((pos) => this.posQueue.enqueue(pos, this.getPriority(pos)));
 
     var boardState: BOARDSTATE;
     if (this.posQueue.size === 0) {
@@ -74,7 +76,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
     }
 
     return {
-      board: [...this.board],
+      board: copyBoard(this.board),
       boardState: boardState,
       path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     }

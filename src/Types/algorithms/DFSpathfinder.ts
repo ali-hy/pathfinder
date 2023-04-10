@@ -1,5 +1,6 @@
+import copyBoard from "../../utils/copyBoard";
+import BoardData from "../BoardData";
 import { BOARDSTATE } from "../BoardState";
-import CellData from "../CellData";
 import { CELLSTATE } from "../CellState";
 import Pos from "../Pos";
 import { ALGORITHM } from "./ALGORITHM";
@@ -11,13 +12,10 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
   posStack:Pos[];
   shortestPath:Pos[];
 
-  initPathfinding(board:CellData[][], startingPosition:Pos){
+  initPathfinding(board:BoardData, startingPosition:Pos){
     super.initPathfinding(board, startingPosition);
-    const adjacentPosition = this.getAdjacentPositions(startingPosition);
-    this.posStack = [...adjacentPosition];
-    adjacentPosition.forEach(pos => {
-      this.paths[pos.toString()] = [pos];
-    })
+    const adjacentPositions = this.getCellAtPos(startingPosition).edgesToValid().map(({end: {position}}) => position);
+    this.posStack = [...adjacentPositions];
   }
   
   noMoreSteps(){
@@ -43,13 +41,13 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
     if(currentCell.state === CELLSTATE.target){
       this.foundTargetPosition = currentCell.position;
     } else {
-      const visitedAdjacentCells = this.getVisitedAdjacentCells(currentCell.position);
-      const validAdjacentCells = this.getValidAdjacentCells(currentCell.position);
-      const adjacentPositions = validAdjacentCells.map(cell => cell.position);
+      const edgesToVisited = currentCell.edgesToVisited();
+      const edgesToValid = currentCell.edgesToValid();
+      const adjacentPositions = currentCell.edgesToValid().map(({end}) => end.position); 
 
       this.posStack.push(...adjacentPositions);
-      validAdjacentCells.concat(visitedAdjacentCells).forEach(cell => {
-        cell.updateParent(currentCell);
+      edgesToValid.concat(edgesToVisited).forEach(edge => {
+        edge.end.updateParent(edge);
       });
 
       currentCell.visit();
@@ -63,7 +61,7 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
     }
 
     return {
-      board: [...this.board],
+      board: copyBoard(this.board),
       boardState: boardState,
       path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
     };
