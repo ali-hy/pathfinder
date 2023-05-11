@@ -96,11 +96,10 @@ export default class CellData {
         }
     }
 
-    updateSurroundingParents(edge:Edge, updateSurrounding){
+    updateSurroundingParents(edge:Edge, updateSurrounding:number){
         if(updateSurrounding <= 0){
             return;
         }
-        console.log(updateSurrounding);
         const visited = this.edgesToVisited();
         const valid = this.edgesToValid();
         visited.concat(valid).forEach(edge => edge.end.updateParent(edge,--updateSurrounding));
