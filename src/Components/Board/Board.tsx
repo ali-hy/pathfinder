@@ -52,10 +52,8 @@ export default function Board(props:BoardProps){
         } 
         else if (e.button === 1){ // middle mb down
             e.preventDefault();
-            if(selectedToolRef.current.index !== TOOL.hand){
-                setPrevTool(selectedToolRef.current);
-                props.setSelectedTool(tools[TOOL.hand]);
-            }
+            setPrevTool(selectedToolRef.current);   
+            props.setSelectedTool(tools[TOOL.hand]);
             action = tools[TOOL.hand].onMouseDown(e);
             takeAction(action);
         }
@@ -79,7 +77,7 @@ export default function Board(props:BoardProps){
     const handleKeyDown = useCallback((e:KeyboardEvent) => {
         e.preventDefault();
         if(e.key.toLowerCase() === " "){
-            if(prevToolRef.current !== undefined) return;            
+            if(prevToolRef.current !== undefined) return;     
             setPrevTool(selectedToolRef.current);
             props.setSelectedTool(tools[TOOL.hand]);
         }

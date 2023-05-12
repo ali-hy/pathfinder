@@ -1,7 +1,6 @@
 # PATH-FINDER
-> Note: this project is WIP. No path-finding algorithms have been implemented yet.
 
-This is a web-app that should visualize a multitude of path-finding algorithms. 
+This is a web-app visualizes graph traversal and pathfinding algorithms (given one source and one destination/target) on a grid.
 
 ***This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).***
 
