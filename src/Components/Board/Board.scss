@@ -1,3 +1,37 @@
+.board-container{
+    height: 100vh;
+    overflow: scroll;
+}
+.board{
+    padding: 50vh 50vw 50vh 50vw;
+    width: fit-content;
+    height: fit-content;
+}
 .board-row{
     display: flex;
+    width: fit-content;    
+}
+
+.cell{
+    font-weight: bold;
+    color: black;
+    text-align: center;
+}
+
+// ------ Scrollbar Styling -------
+.board-container::-webkit-scrollbar{
+width: 3px;
+    height: 3px;
+    background-color: transparent;
+}
+.board-container::-webkit-scrollbar-thumb{
+    border-radius: 5px;
+    background-color: #555;
+}
+.board-container::-webkit-scrollbar-track{
+    background-color: transparent;
+}
+.board-container::-webkit-scrollbar-track-piece{
+    border-radius: 5px;
+    background-color: transparent;
 }

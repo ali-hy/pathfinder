@@ -1,11 +1,13 @@
 import { css, StyleSheet } from "aphrodite";
-import { CellState } from "../../Types/CellState";
-
+import CellData from "../../Types/CellData";
+import { CELLSTATE } from "../../Types/CellState";
 
 interface CellProps{
     x:number,
     y:number,
-    cellState:CellState
+    cellData:CellData,
+    onClick():void,
+    onEnter():void
 }
 
 export default function Cell(props:CellProps){
@@ -14,23 +16,39 @@ export default function Cell(props:CellProps){
             width: "20px",
             height: "20px",
             border: "solid 1px #bbb",
+            backgroundPosition: "center",
         },
         wall: {
-            backgroundColor: "black",
+            background: "black",
         },
         empty: {
-            backgroundColor: "transparent",
+            background: 'none',
         },
         path: {
-            backgroundColor: "#009977",
+            background: "#009977",
         },
-        search: {
-            backgroundColor: "#405000"
-        }
+        visited:{
+            background: "#cafff9",
+        },
+        searchStart: {
+            background: "#0055ff"
+        },
+        target: {
+            background: "#ff4044"
+        },
     })
 
+    const clickHandler = function(e:MouseEvent){
+        if(e.button === 0) props.onClick();
+    }
 
     return(
-        <div className={'cell ' + css(cellStyles.size, cellStyles.empty)}></div>
+        <div 
+            className={'cell ' + css(cellStyles.size, cellStyles[CELLSTATE[props.cellData.state]])}
+            onMouseDown={clickHandler as any}
+            onMouseEnter={() => props.onEnter()} 
+        >
+            {props.cellData.netDistance.toFixed(0)}
+        </div>
     )
 }

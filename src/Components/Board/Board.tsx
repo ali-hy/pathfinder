@@ -1,119 +1,143 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import './Board.scss';
 
-import { useEffect, useState } from "react";
-import { CellState } from "../../Types/CellState";
-import Cell from "./Cell";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Row from "./Row";
-import tools, { ACTION, actionDetails, handTool, TOOL, tool } from '../../Types/Tools';
+import tools, { ACTION, actionDetails, placeTool, TOOL, tool } from '../../Types/Tools';
 import Pos from '../../Types/Pos';
 import { css, StyleSheet } from 'aphrodite';
+import useUpdatingRef from '../../Hooks/useUpdatingRef';
+import useForceUpdate from '../../Hooks/useForceUpdate';
+import BoardData from '../../Types/BoardData';
 
 interface BoardProps{
-    board:CellState[][];
+    board:BoardData;
     boardPosition:Pos;
-    setBoardPosition:Function;
     selectedTool:tool;
     setSelectedTool:Function;
+    onCellClick(x:number, y:number):void;
+    onCellEnter(x:number, y:number):void;
 }
-
-var _prevTool;
-var _mouseStartPosition:Pos;
-var _boardPosition:Pos = {x: 0, y: 0};
-var _mousePositionChange:Pos;
-
 
 
 export default function Board(props:BoardProps){
-    const {boardPosition, setBoardPosition} = props;
-    const [mousePositionChange, setMousePositionChange] = useState<Pos>({x: 0, y:0});
+    const [prevTool, setPrevTool] = useState<tool>();
+    const prevToolRef = useUpdatingRef(prevTool);   //reference for event handlers
+    const selectedToolRef = useUpdatingRef(props.selectedTool); //reference for event handlers
+    const forceUpdate = useForceUpdate();
+
+    const boardContainerRef = useRef();
+    const boardRef = useRef();
 
     const takeAction = ({type, payload}:actionDetails) => {
         switch(type){
             case ACTION.rerenderTool:
-                if(props.selectedTool.active){_mouseStartPosition = {x: payload.x, y: payload.y}}
-                else{
-                    console.log('setting board position to', {
-                        x: _boardPosition.x + _mousePositionChange.x,
-                        y: _boardPosition.y + _mousePositionChange.y
-                    })
-                    setBoardPosition({
-                        x: _boardPosition.x + _mousePositionChange.x,
-                        y: _boardPosition.y + _mousePositionChange.y
-                    });
-                    setMousePositionChange({x: 0, y: 0});
-                }
-                props.setSelectedTool({...props.selectedTool});
+                forceUpdate();
+                break;
+            case ACTION.move:
+                if(boardContainerRef.current) (boardContainerRef.current as HTMLElement).scrollBy(-payload.x, -payload.y);
                 break;
         }
     }
 
-    const mouseDownHandler = (e:MouseEvent) => {
+    // ------- HAND TOOL EVENT HANDLERS --------
+    const mouseDownHandler = useCallback((e:MouseEvent) => {
+        var action:actionDetails;
         if(e.button === 0){ // left mb down
-            const action:actionDetails = props.selectedTool.onMouseDown();
+            if(selectedToolRef.current instanceof placeTool)
+                return;
+            action = selectedToolRef.current.onMouseDown(e);
             action.payload = {x: e.clientX, y: e.clientY};
             takeAction(action);
         } 
         else if (e.button === 1){ // middle mb down
-            _prevTool = props.selectedTool;
-            tools[TOOL.hand].onMouseDown();
-            props.setSelectedTool(tools[TOOL.hand]);
+            e.preventDefault();
+            if(selectedToolRef.current.index !== TOOL.hand){
+                setPrevTool(selectedToolRef.current);
+                props.setSelectedTool(tools[TOOL.hand]);
+            }
+            action = tools[TOOL.hand].onMouseDown(e);
+            takeAction(action);
         }
-    }
-    const mouseUpHandler = (e) => {
-        if(e.button === 0){ // left mb down
-            const action:actionDetails = props.selectedTool.onMouseUp();
+    }, [])
+    const mouseUpHandler = useCallback((e:MouseEvent) => {
+        if(e.button === 0){ // left mb up
+            const action:actionDetails = selectedToolRef.current.onMouseUp();
             takeAction(action);
         } 
-        else if (e.button === 1){ // middle mb mid
+        else if (e.button === 1){ // middle mb up
             tools[TOOL.hand].onMouseUp();
-            props.setSelectedTool(_prevTool);
+            props.setSelectedTool(prevToolRef.current);
         }
-    }
-    const mouseMoveHandler = (e:MouseEvent) => {
-        if((props.selectedTool instanceof handTool) && props.selectedTool.active){
-            const change = {x: e.clientX - _mouseStartPosition.x, y: e.clientY - _mouseStartPosition.y}
-            setMousePositionChange(change);
+    },[])
+    const mouseMoveHandler = useCallback((e:MouseEvent) => {
+        const tool = selectedToolRef.current;
+        if(tool.active){
+            takeAction(tool.onMouseMove(new Pos(e.clientX, e.clientY)))
+        };
+    },[])
+    const handleKeyDown = useCallback((e:KeyboardEvent) => {
+        e.preventDefault();
+        if(e.key.toLowerCase() === " "){
+            if(prevToolRef.current !== undefined) return;            
+            setPrevTool(selectedToolRef.current);
+            props.setSelectedTool(tools[TOOL.hand]);
         }
-    }
+    },[])
+    const handleKeyUp = useCallback((e:KeyboardEvent) => {
+        if(e.key === " "){
+            tools[TOOL.hand].onMouseUp();
+            props.setSelectedTool(prevToolRef.current);
+            setPrevTool(undefined);
+        }
+    },[])
 
+    // ------- ON COMPONENT MOUNT ----------
     useEffect(() => {
-        window.addEventListener('mousedown', mouseDownHandler);
-        window.addEventListener('mouseup', mouseUpHandler);
-        window.addEventListener('mousemove', mouseMoveHandler);
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
 
+        //Scroll to center
+        const boardElement:HTMLElement = boardRef.current;
+        (boardContainerRef.current as HTMLElement).scrollTo(
+            boardElement.offsetWidth/2 - window.innerWidth/2, 
+            boardElement.offsetHeight/2 - window.innerHeight/2 - 20
+        )
         return () => {
-            window.removeEventListener('mousedown', mouseDownHandler);
-            window.removeEventListener('mouseup', mouseUpHandler);
-            window.addEventListener('mousemove', mouseMoveHandler);
+          window.removeEventListener('keydown', handleKeyDown);
+          window.removeEventListener('keyup', handleKeyUp);
         }
     }, []);
 
-    useEffect(() => {
-        _boardPosition = boardPosition;
-    }, [boardPosition])
-    useEffect(() => {
-        _mousePositionChange = mousePositionChange;
-    }, [mousePositionChange])
-    // useEffect(() => {
-    //     console.log('selected ', props.selectedTool);
-    // }, [props.selectedTool])
 
     const boardStyles = StyleSheet.create({
         board:{
-            height: "100vh",
-            cursor: props.selectedTool.cursorClass
+            cursor: props.selectedTool.getCursorClass(),    
         },
-        grid:{
-            top: boardPosition.y + mousePositionChange.y,
-            left: boardPosition.x + mousePositionChange.x,
-        }
     })
 
-    const grid = <div className={`position-absolute ${css(boardStyles.grid)}`}>{props.board.map((row, y) => { return (<Row key={y} cellStates={row} y={y}/>)})}</div>;
+    const grid = <div className={`position-relative`}>
+        {props.board.map((row, y) => { return (
+            <Row 
+                onCellClick={(x:number, y:number) => props.onCellClick(x,y)}
+                onCellEnter={(x:number, y:number) => props.onCellEnter(x,y)}
+                key={y}
+                cellData={row} 
+                y={y}
+            />)})}
+    </div>;
 
     return(
-        <div className={"board user-select-none " + css(boardStyles.board)}>
-            {grid}
+        <div 
+            className={"board-container " + css(boardStyles.board)}
+            onMouseDown={mouseDownHandler as any} 
+            onMouseUp={mouseUpHandler as any} 
+            onMouseMove={mouseMoveHandler as any}  
+            ref={boardContainerRef} 
+        >
+            <div ref={boardRef} className={"board user-select-none"}>
+                {grid}
+            </div>
         </div>
     )
 }

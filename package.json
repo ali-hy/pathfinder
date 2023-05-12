@@ -11,6 +11,7 @@
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
     "aphrodite": "^2.4.0",
+    "bootstrap": "^5.2.3",
     "node-sass": "^7.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -42,5 +43,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "commitizen": "^4.2.5"
   }
 }
