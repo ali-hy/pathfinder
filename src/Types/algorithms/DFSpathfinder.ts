@@ -14,8 +14,12 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
 
   initPathfinding(board:BoardData, startingPosition:Pos){
     super.initPathfinding(board, startingPosition);
-    const adjacentPositions = this.getCellAtPos(startingPosition).edgesToValid().map(({end: {position}}) => position);
+    const adjacentPositions = this.getCellAtPos(startingPosition).edgesToValid().map(({start, end}) => {
+      end.setParent(start);
+      return end.position;
+    });
     this.posStack = [...adjacentPositions];
+
   }
   
   noMoreSteps(){
@@ -41,13 +45,12 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
     if(currentCell.state === CELLSTATE.target){
       this.foundTargetPosition = currentCell.position;
     } else {
-      const edgesToVisited = currentCell.edgesToVisited();
       const edgesToValid = currentCell.edgesToValid();
       const adjacentPositions = currentCell.edgesToValid().map(({end}) => end.position); 
 
       this.posStack.push(...adjacentPositions);
-      edgesToValid.concat(edgesToVisited).forEach(edge => {
-        edge.end.updateParent(edge);
+      edgesToValid.forEach(({start, end}) => {
+        end.setParent(start);
       });
 
       currentCell.visit();

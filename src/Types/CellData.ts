@@ -92,6 +92,7 @@ export default class CellData {
             }
         }
         if(updated){
+            console.log("will update " + updateSurrounding + " surrounding")
             this.updateSurroundingParents(edge, updateSurrounding);
         }
     }
