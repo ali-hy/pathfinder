@@ -47,6 +47,7 @@ export default function Cell(props:CellProps){
             className={'cell ' + css(cellStyles.size, cellStyles[CELLSTATE[props.cellData.state]])}
             onMouseDown={clickHandler as any}
             onMouseEnter={() => props.onEnter()} 
-        ></div>
+        >
+        </div>
     )
 }
