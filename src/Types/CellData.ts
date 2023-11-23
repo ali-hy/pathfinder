@@ -18,8 +18,9 @@ export default class CellData {
         this.position = position;
     }
 
-    setEdges(){
+    setEdges(allowDiagonals = false){
         const {x, y} = this.position;
+        this.edges = [];
         
         const notLeftEdge = x > 0;
         const notTopEdge = y > 0;
@@ -38,6 +39,9 @@ export default class CellData {
         if (notBottomEdge) {
             this.edges.push(new Edge(this.position, this.position.down(), 1));
         }
+
+        if (!allowDiagonals)
+            return;
 
         if (notTopEdge && notLeftEdge){
             this.edges.push(new Edge(this.position, this.position.left().up(), root2));
@@ -92,7 +96,6 @@ export default class CellData {
             }
         }
         if(updated){
-            console.log("will update " + updateSurrounding + " surrounding")
             this.updateSurroundingParents(edge, updateSurrounding);
         }
     }

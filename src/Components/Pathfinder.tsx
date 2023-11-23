@@ -25,8 +25,8 @@ function generateBoard() {
 
 export default function PathFinder() {
   const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0,0));
+  const [allowDiagonals, setAllowDiagonals] = useState(false);
   const [board, setBoard] = useState(useMemo(generateBoard, []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
   const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
@@ -208,16 +208,27 @@ export default function PathFinder() {
           ))}
         </ul>
         <div className="d-flex align-items-center">
+          <input
+            id={"allow-diagonals-checkbox"}
+            type={"checkbox"}
+            className={"btn btn-dark me-1"}
+            checked={allowDiagonals}
+            onClick={() => {
+              setAllowDiagonals(!allowDiagonals);
+              algorithms[selectedAlgorithm].board.setDiagonals(!allowDiagonals);
+            }}
+          />
+          <label className={"me-4"} htmlFor={"allow-diagonals-checkbox"}>Allow Diagonals</label>
           <button className="btn btn-outline-primary me-2" onClick={resetPathSearch}>Reset Search</button>
-          <button 
-            className="btn btn-primary me-2" 
+          <button
+            className="btn btn-primary me-2"
             onClick={() => playAnimation()}
             disabled={disableSearch}
           >
             Find Path
           </button>
-          <button 
-            className="btn btn-primary next-btn fw-bold" 
+          <button
+            className="btn btn-primary next-btn fw-bold"
             onClick={() => executeOneStep()}
             disabled={disableSearch}
           >

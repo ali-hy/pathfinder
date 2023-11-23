@@ -42,7 +42,7 @@ export default function Board(props:BoardProps){
 
     // ------- HAND TOOL EVENT HANDLERS --------
     const mouseDownHandler = useCallback((e:MouseEvent) => {
-        var action:actionDetails;
+        let action:actionDetails;
         if(e.button === 0){ // left mb down
             if(selectedToolRef.current instanceof placeTool)
                 return;
@@ -72,7 +72,7 @@ export default function Board(props:BoardProps){
         const tool = selectedToolRef.current;
         if(tool.active){
             takeAction(tool.onMouseMove(new Pos(e.clientX, e.clientY)))
-        };
+        }
     },[])
     const handleKeyDown = useCallback((e:KeyboardEvent) => {
         e.preventDefault();

@@ -8,8 +8,9 @@ export default class BoardData{
   width:number;
   height:number;
   state:BOARDSTATE;
+  private allowDiagonals:boolean;
 
-  constructor(height?:number, width?:number){
+  constructor(height?:number, width?:number, allowDiagonals?:boolean){
     if(height === undefined){
       return;
     }
@@ -18,6 +19,7 @@ export default class BoardData{
     this.grid = [];
     CellData.board = this;
     Edge.board = this;
+    this.allowDiagonals = allowDiagonals;
 
     for(let i = 0; i < height; i++){
       const row = [];
@@ -27,11 +29,20 @@ export default class BoardData{
       this.grid.push(row);
     }
 
+    this.generateEdges();
+  }
+
+  generateEdges() {
     this.grid.forEach(row => {
       row.forEach(cell => {
-        cell.setEdges();
+        cell.setEdges(this.allowDiagonals);
       })
     });
+  }
+
+  setDiagonals(val:boolean) {
+    this.allowDiagonals = val;
+    this.generateEdges();
   }
 
   cellAtPos({x,y}: {x:number, y:number}){
