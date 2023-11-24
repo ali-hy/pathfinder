@@ -17,17 +17,17 @@ import BoardData from "../Types/BoardData";
 import copyBoard from "../utils/copyBoard";
 
 // ------ INITIAL GRID DATA -------
-export const gridHeight = 40;
-export const gridWidth = 70;
-function generateBoard() {
-  return new BoardData(gridHeight, gridWidth);
+export const gridHeight = 33;
+export const gridWidth = 71;
+function generateBoard(allowDiagonals = false) {
+  return new BoardData(gridHeight, gridWidth, allowDiagonals);
 }
 
 export default function PathFinder() {
   const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
   const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0,0));
   const [allowDiagonals, setAllowDiagonals] = useState(false);
-  const [board, setBoard] = useState(useMemo(generateBoard, []));
+  const [board, setBoard] = useState(useMemo(() => generateBoard(allowDiagonals), []));
   const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
   const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
   const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
