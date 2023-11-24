@@ -74,7 +74,7 @@ export default class BfsPathfinder extends PathfindingAlgorithm {
     adjacentPositions.forEach((pos) => this.enqueuePos(pos));
     edges.forEach(({end}) => end.setParent(currentCell));
 
-    var boardState: BOARDSTATE;
+    let boardState: BOARDSTATE;
     if (this.foundTargetPosition || this.posQueue.length === 0) {
       boardState = BOARDSTATE.searchComplete;
     } else {

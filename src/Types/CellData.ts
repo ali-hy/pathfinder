@@ -80,7 +80,7 @@ export default class CellData {
     }
 
     updateParent(edge:Edge, updateSurrounding=1){
-        var updated = false;
+        let updated = false;
         const parent = edge.start;
         if(this.parent === undefined){
             this.parent = parent;

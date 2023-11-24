@@ -56,7 +56,7 @@ export default class DfsPathfinder extends PathfindingAlgorithm{
       currentCell.visit();
     }
 
-    var boardState:BOARDSTATE;
+    let boardState:BOARDSTATE;
     if(this.foundTargetPosition || this.posStack.length === 0){
       boardState = BOARDSTATE.searchComplete;
     } else {

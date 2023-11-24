@@ -68,7 +68,7 @@ export default class AstarPathfinder extends PathfindingAlgorithm{
     edges.forEach((edge) => edge.end.updateParent(edge));
     validAdjacentPositions.forEach((pos) => this.posQueue.enqueue(pos, this.getPriority(pos)));
 
-    var boardState: BOARDSTATE;
+    let boardState: BOARDSTATE;
     if (this.posQueue.size === 0) {
       boardState = BOARDSTATE.searchComplete;
     } else {
