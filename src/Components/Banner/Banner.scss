@@ -1,40 +1,50 @@
-.banner{
-    z-index: 10000;
-    box-shadow: 0 2px 5px 0px rgba(0, 0, 0, 0.4);
-}
-.banner-title{
-    width:fit-content;
-}
-.tool-btn{
-    position: relative !important;
-    border-radius: 5px;
-    height: 30px;
-    width: 30px;
-    overflow: hidden;
-    aspect-ratio: 1 / 1;
-
-    cursor: pointer;
-}
-.tool-btn.selected{
-    border: solid 2px #666;
-    padding: 2px;
-}
-.tool-btn img{
-    border-radius: 5px;
-    height: 100%;
-    object-fit: contain;
+.banner {
+  z-index: 10000;
+  box-shadow: 0 2px 5px 0px rgba(0, 0, 0, 0.4);
 }
 
-.banner ul{
-    display: flex;
-    align-items: center;
-
-    gap: 5px;
-
-    margin: 0;
-    padding: 0;
+.banner-title {
+  width: fit-content;
 }
 
-.message{
-    margin: 0 0 0 6px;
+.tool-btn {
+  position: relative !important;
+  border-radius: 5px;
+  height: 30px;
+  width: 30px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+
+  cursor: pointer;
+}
+
+.tool-btn.disabled {
+  cursor: no-drop;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.tool-btn.selected {
+  border: solid 2px #666;
+  padding: 2px;
+}
+
+.tool-btn img {
+  border-radius: 5px;
+  height: 100%;
+  object-fit: contain;
+}
+
+.banner ul {
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  margin: 0;
+  padding: 0;
+}
+
+.message {
+  margin: 0 0 0 6px;
 }

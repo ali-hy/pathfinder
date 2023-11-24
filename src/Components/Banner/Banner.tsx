@@ -1,5 +1,5 @@
-import { ALGORITHM } from "../../Types/algorithms/ALGORITHM";
-import { PathfindingAlgorithm } from "../../Types/algorithms/PathfindingAlgorithm";
+import { ALGORITHM } from "../../algorithms/pathfinding/ALGORITHM";
+import { PathfindingAlgorithm } from "../../algorithms/pathfinding/PathfindingAlgorithm";
 import "./Banner.scss";
 
 interface BannerProps {

@@ -1,8 +1,8 @@
 import copyBoard from "../../utils/copyBoard";
-import BoardData from "../BoardData";
-import { BOARDSTATE } from "../BoardState";
-import { CELLSTATE } from "../CellState";
-import Pos from "../Pos";
+import BoardData from "../../Types/BoardData";
+import { BOARDSTATE } from "../../Types/BoardState";
+import { CELLSTATE } from "../../Types/CellState";
+import Pos from "../../Types/Pos";
 import { ALGORITHM } from "./ALGORITHM";
 import { PathfindingAlgorithm } from "./PathfindingAlgorithm";
 

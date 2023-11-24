@@ -1,7 +1,7 @@
-import BoardData from "../BoardData";
-import { BOARDSTATE } from "../BoardState";
-import CellData from "../CellData";
-import Pos from "../Pos";
+import BoardData from "../../Types/BoardData";
+import { BOARDSTATE } from "../../Types/BoardState";
+import CellData from "../../Types/CellData";
+import Pos from "../../Types/Pos";
 import { ALGORITHM } from "./ALGORITHM";
 
 export interface pathfindingData{

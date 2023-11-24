@@ -99,8 +99,8 @@ export default function Board(props:BoardProps){
         const boardElement:HTMLElement = boardRef.current;
         (boardContainerRef.current as HTMLElement).scrollTo(
             boardElement.offsetWidth/2 - window.innerWidth/2, 
-            boardElement.offsetHeight/2 - window.innerHeight/2 - 20
-        )
+            boardElement.offsetHeight/2 - window.innerHeight/2 - 35
+        );
         return () => {
           window.removeEventListener('keydown', handleKeyDown);
           window.removeEventListener('keyup', handleKeyUp);

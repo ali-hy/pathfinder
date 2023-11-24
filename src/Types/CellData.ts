@@ -1,133 +1,182 @@
 import BoardData from "./BoardData";
-import { CELLSTATE } from "./CellState";
+import {CELLSTATE} from "./CellState";
 import Edge from "./Edge";
 import Pos from "./Pos";
-import { root2 } from "./algorithms/PathfindingAlgorithm";
+import {root2} from "../algorithms/pathfinding/PathfindingAlgorithm";
 
 export default class CellData {
-    static board:BoardData;
+	static board: BoardData;
 
-    private edges:Edge[] = [];
+	private edges: Edge[] = [];
 
-    position:Pos;
-    state:CELLSTATE = CELLSTATE.empty;
-    netDistance:number = 0;
-    private parent?:CellData = undefined;
-    
-    constructor(position:Pos){
-        this.position = position;
-    }
+	position: Pos;
+	state: CELLSTATE = CELLSTATE.empty;
+	netDistance: number = 0;
+	private parent?: CellData = undefined;
 
-    setEdges(allowDiagonals = false){
-        const {x, y} = this.position;
-        this.edges = [];
-        
-        const notLeftEdge = x > 0;
-        const notTopEdge = y > 0;
-        const notRightEdge = x < CellData.board.width - 1;
-        const notBottomEdge = y < CellData.board.height - 1;
-        
-        if (notLeftEdge) {
-            this.edges.push(new Edge(this.position, this.position.left(), 1));
-        }
-        if (notTopEdge) {
-            this.edges.push(new Edge(this.position, this.position.up(), 1));
-        }
-        if (notRightEdge) {
-            this.edges.push(new Edge(this.position, this.position.right(), 1));
-        }
-        if (notBottomEdge) {
-            this.edges.push(new Edge(this.position, this.position.down(), 1));
-        }
+	constructor(position: Pos) {
+		this.position = position;
+	}
 
-        if (!allowDiagonals)
-            return;
+	setEdges(allowDiagonals = false) {
+		const {x, y} = this.position;
+		this.edges = [];
 
-        if (notTopEdge && notLeftEdge){
-            this.edges.push(new Edge(this.position, this.position.left().up(), root2));
-        }
-        if (notTopEdge && notRightEdge){
-            this.edges.push(new Edge(this.position, this.position.right().up(), root2));
-        }
-        if (notBottomEdge && notLeftEdge){
-            this.edges.push(new Edge(this.position, this.position.left().down(), root2));
-        }
-        if (notBottomEdge && notRightEdge){
-            this.edges.push(new Edge(this.position, this.position.right().down(), root2));
-        }
-    }
+		const notLeftEdge = x > 0;
+		const notTopEdge = y > 0;
+		const notRightEdge = x < CellData.board.width - 1;
+		const notBottomEdge = y < CellData.board.height - 1;
 
-    edgesToValid(){
-        return this.edges.filter(({end}) =>  end.isTravelValid());
-    }
+		if (notLeftEdge) {
+			this.edges.push(new Edge(this.position, this.position.left(), 1));
+		}
+		if (notTopEdge) {
+			this.edges.push(new Edge(this.position, this.position.up(), 1));
+		}
+		if (notRightEdge) {
+			this.edges.push(new Edge(this.position, this.position.right(), 1));
+		}
+		if (notBottomEdge) {
+			this.edges.push(new Edge(this.position, this.position.down(), 1));
+		}
 
-    edgesToVisited(){
-        return this.edges.filter(({end}) => end.state === CELLSTATE.visited);
-    }
+		if (!allowDiagonals)
+			return;
 
-    getCurrentPath(){
-        if(this.parent === undefined){
-            return [this.position]
-        }
-        return [...this.parent.getCurrentPath(), this.position];
-    }
+		if (notTopEdge && notLeftEdge) {
+			this.edges.push(new Edge(this.position, this.position.left().up(), root2));
+		}
+		if (notTopEdge && notRightEdge) {
+			this.edges.push(new Edge(this.position, this.position.right().up(), root2));
+		}
+		if (notBottomEdge && notLeftEdge) {
+			this.edges.push(new Edge(this.position, this.position.left().down(), root2));
+		}
+		if (notBottomEdge && notRightEdge) {
+			this.edges.push(new Edge(this.position, this.position.right().down(), root2));
+		}
+	}
 
-    //PARENT
-    setParent(parent:CellData){
-        if(this.parent === undefined){
-            this.parent = parent;
-        }
-    }
+	edgesToValid() {
+		return this.edges.filter(({end}) => end.isTravelValid());
+	}
 
-    updateParent(edge:Edge, updateSurrounding=1){
-        let updated = false;
-        const parent = edge.start;
-        if(this.parent === undefined){
-            this.parent = parent;
-            this.netDistance = parent.netDistance + edge.weight;
-            updated = true;
-        } else {
-            const newDistance = parent.netDistance + edge.weight;
-            const change = newDistance < this.netDistance;
-            if(change){
-                this.parent = parent;
-                this.netDistance = newDistance;
-                updated = true;
-            }
-        }
-        if(updated){
-            this.updateSurroundingParents(edge, updateSurrounding);
-        }
-    }
+	edgesToVisited() {
+		return this.edges.filter(({end}) => end.state === CELLSTATE.visited);
+	}
 
-    updateSurroundingParents(edge:Edge, updateSurrounding:number){
-        if(updateSurrounding <= 0){
-            return;
-        }
-        const visited = this.edgesToVisited();
-        const valid = this.edgesToValid();
-        visited.concat(valid).forEach(edge => edge.end.updateParent(edge,--updateSurrounding));
-    }
-    
-    clearParent(){
-        this.parent = undefined;
-        this.netDistance = 0;
-    }
+	getCurrentPath() {
+		if (this.parent === undefined) {
+			return [this.position]
+		}
+		return [...this.parent.getCurrentPath(), this.position];
+	}
 
-    //STATE
-    visit(){
-        this.state = CELLSTATE.visited;
-    }
+	//PARENT
+	setParent(parent: CellData) {
+		if (this.parent === undefined) {
+			this.parent = parent;
+		}
+	}
 
-    empty(){
-        this.state = CELLSTATE.empty;
-    }
+	updateParent(edge: Edge, updateSurrounding = 1) {
+		let updated = false;
+		const parent = edge.start;
+		if (this.parent === undefined) {
+			this.parent = parent;
+			this.netDistance = parent.netDistance + edge.weight;
+			updated = true;
+		} else {
+			const newDistance = parent.netDistance + edge.weight;
+			const change = newDistance < this.netDistance;
+			if (change) {
+				this.parent = parent;
+				this.netDistance = newDistance;
+				updated = true;
+			}
+		}
+		if (updated) {
+			this.updateSurroundingParents(edge, updateSurrounding);
+		}
+	}
 
-    walk(){
-            this.state = CELLSTATE.path;
-    }
+	updateSurroundingParents(edge: Edge, updateSurrounding: number) {
+		if (updateSurrounding <= 0) {
+			return;
+		}
+		const visited = this.edgesToVisited();
+		const valid = this.edgesToValid();
+		visited.concat(valid).forEach(edge => edge.end.updateParent(edge, --updateSurrounding));
+	}
 
-    isTravelValid(){
-        return (this.state <= CELLSTATE.target);
-    }
+	clearParent() {
+		this.parent = undefined;
+		this.netDistance = 0;
+	}
+
+	// MAZE GENERATION
+	setMazeEdges() {
+		const {x, y} = this.position;
+		this.edges = [];
+
+		if (x === 0 || y === 0 || x === CellData.board.width - 1 || y === CellData.board.height - 1)
+			return;
+
+		const notLeftEdge = x > 1;
+		const notTopEdge = y > 1;
+		const notRightEdge = x < CellData.board.width - 2;
+		const notBottomEdge = y < CellData.board.height - 2;
+
+		if (notLeftEdge) {
+			this.edges.push(new Edge(this.position, this.position.left().left(), 1));
+		}
+		if (notTopEdge) {
+			this.edges.push(new Edge(this.position, this.position.up().up(), 1));
+		}
+		if (notRightEdge) {
+			this.edges.push(new Edge(this.position, this.position.right().right(), 1));
+		}
+		if (notBottomEdge) {
+			this.edges.push(new Edge(this.position, this.position.down().down(), 1));
+		}
+	}
+
+	cellTo(cell: CellData) {
+		if (cell.position.y == this.position.y)
+			return (CellData.board.cellAtPos({
+				x: this.position.x + Math.sign(cell.position.x - this.position.x),
+				y: this.position.y
+			}))
+
+		if (cell.position.x == this.position.x)
+			return (CellData.board.cellAtPos({
+				x: this.position.x,
+				y: this.position.y + Math.sign(cell.position.y - this.position.y),
+			}))
+	}
+
+	edgesToWalls() {
+		return this.edges.filter(({end}) => end.state === CELLSTATE.wall)
+	}
+
+	isAdjTo(cell: CellData) {
+		return (this.edges.map(edge => edge.end).includes(cell))
+	}
+
+	// STATE
+	visit() {
+		this.state = CELLSTATE.visited;
+	}
+
+	empty() {
+		this.state = CELLSTATE.empty;
+	}
+
+	walk() {
+		this.state = CELLSTATE.path;
+	}
+
+	isTravelValid() {
+		return (this.state <= CELLSTATE.target);
+	}
 }

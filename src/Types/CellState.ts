@@ -4,7 +4,7 @@ export enum CELLSTATE{
     debugging,
     target, //last travel Valid
 
-    //Not Travil Valid
+    //Not Travel Valid
     searchStart,
     wall,
     path,

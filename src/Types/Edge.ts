@@ -1,7 +1,7 @@
 import BoardData from "./BoardData";
 import CellData from "./CellData";
 import Pos from "./Pos";
-import { root2 } from "./algorithms/PathfindingAlgorithm";
+import { root2 } from "../algorithms/pathfinding/PathfindingAlgorithm";
 
 export default class Edge{
   static board:BoardData;
