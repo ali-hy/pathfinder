@@ -1,106 +1,106 @@
 import BoardData from "../../Types/BoardData";
-import { BOARDSTATE } from "../../Types/BoardState";
 import CellData from "../../Types/CellData";
 import Pos from "../../Types/Pos";
-import { ALGORITHM } from "./ALGORITHM";
+import {ALGORITHM} from "./ALGORITHM";
 
-export interface pathfindingData{
-  board:BoardData;
-  boardState:BOARDSTATE;
-  path?:Pos[];
+export interface pathfindingData {
+	board: BoardData;
+	path?: Pos[];
 }
 
 export const root2 = Math.sqrt(2);
-export abstract class PathfindingAlgorithm{
-  readonly name:string;
-  readonly index:ALGORITHM;
 
-  // Input vars
-  board:BoardData;
-  startingPosition:Pos;
-  allowDiagonals:boolean;
+export abstract class PathfindingAlgorithm {
+	readonly name: string;
+	readonly index: ALGORITHM;
 
-  // Process Vars
-  currentCell:CellData;
-  foundTargetPosition:Pos;
+	// Input vars
+	board: BoardData;
+	startingPosition: Pos;
+	allowDiagonals: boolean;
 
-  initPathfinding(board:BoardData, startingPosition:Pos, targetPosition?:Pos){
-    this.board = board;
-    this.startingPosition = startingPosition;
-    this.resetProcessData();
-  };
+	// Process Vars
+	currentCell: CellData;
+	foundTargetPosition: Pos;
 
-  resetProcessData(){
-    this.currentCell = undefined;
-    this.foundTargetPosition = undefined;
-  }
+	initPathfinding(board: BoardData, startingPosition: Pos, targetPosition?: Pos) {
+		this.board = board;
+		this.startingPosition = startingPosition;
+		this.resetProcessData();
+	};
 
-  protected abstract noMoreSteps():boolean;
-  abstract executeStep():pathfindingData;
+	resetProcessData() {
+		this.currentCell = undefined;
+		this.foundTargetPosition = undefined;
+	}
 
-  // ---- Board Utils ----
-  getCellAtPos ({ x, y }: Pos){
-    return this.board.cellAtPos(new Pos(x,y));
-  };
+	protected abstract noMoreSteps(): boolean;
 
-  // getAdjacentPositions({ x, y }: Pos){
-  //   const adjacentPositions: Pos[] = [];
-  //   const notLeftEdge = x > 0;
-  //   const notTopEdge = y > 0;
-  //   const notRightEdge = x < this.board.width - 1;
-  //   const notBottomEdge = y < this.board.height - 1;
+	abstract executeStep(): pathfindingData;
 
-  //   if (notLeftEdge) {
-  //     adjacentPositions.push(new Pos(x-1, y));
-  //   }
-  //   if (notTopEdge) {
-  //     adjacentPositions.push(new Pos(x, y-1));
-  //   }
-  //   if (notRightEdge) {
-  //     adjacentPositions.push(new Pos(x+1, y));
-  //   }
-  //   if (notBottomEdge) {
-  //     adjacentPositions.push(new Pos(x, y+1));
-  //   }
+	// ---- Board Utils ----
+	getCellAtPos({x, y}: Pos) {
+		return this.board.cellAtPos(new Pos(x, y));
+	};
 
-  //   if (notTopEdge && notLeftEdge){
-  //     adjacentPositions.push(new Pos(x-1, y-1));
-  //   }
-  //   if (notTopEdge && notRightEdge){
-  //     adjacentPositions.push(new Pos(x+1, y-1));
-  //   }
-  //   if (notBottomEdge && notLeftEdge){
-  //     adjacentPositions.push(new Pos(x-1, y+1));
-  //   }
-  //   if (notBottomEdge && notRightEdge){
-  //     adjacentPositions.push(new Pos(x+1, y+1));
-  //   }
-    
-  //   return adjacentPositions;
-  // };
+	// getAdjacentPositions({ x, y }: Pos){
+	//   const adjacentPositions: Pos[] = [];
+	//   const notLeftEdge = x > 0;
+	//   const notTopEdge = y > 0;
+	//   const notRightEdge = x < this.board.width - 1;
+	//   const notBottomEdge = y < this.board.height - 1;
 
-  // getAdjacentCells(pos:Pos){
-  //   return this.getAdjacentPositions(pos)
-  //   .map(pos => this.getCellAtPos(pos));
-  // }
+	//   if (notLeftEdge) {
+	//     adjacentPositions.push(new Pos(x-1, y));
+	//   }
+	//   if (notTopEdge) {
+	//     adjacentPositions.push(new Pos(x, y-1));
+	//   }
+	//   if (notRightEdge) {
+	//     adjacentPositions.push(new Pos(x+1, y));
+	//   }
+	//   if (notBottomEdge) {
+	//     adjacentPositions.push(new Pos(x, y+1));
+	//   }
 
-  // getValidAdjacentCells(pos:Pos){
-  //   return this.getAdjacentCells(pos)
-  //   .filter(cell => cell.isTravelValid());
-  // }
+	//   if (notTopEdge && notLeftEdge){
+	//     adjacentPositions.push(new Pos(x-1, y-1));
+	//   }
+	//   if (notTopEdge && notRightEdge){
+	//     adjacentPositions.push(new Pos(x+1, y-1));
+	//   }
+	//   if (notBottomEdge && notLeftEdge){
+	//     adjacentPositions.push(new Pos(x-1, y+1));
+	//   }
+	//   if (notBottomEdge && notRightEdge){
+	//     adjacentPositions.push(new Pos(x+1, y+1));
+	//   }
 
-  // getVisitedAdjacentCells(pos:Pos){
-  //   return this.getAdjacentCells(pos)
-  //   .filter(cell => cell.state === CELLSTATE.visited);
-  // }
+	//   return adjacentPositions;
+	// };
 
-  // ---- Path Utils ----
-  
-  getPathToCell(cell:CellData){
-    return cell.getCurrentPath();
-  }
+	// getAdjacentCells(pos:Pos){
+	//   return this.getAdjacentPositions(pos)
+	//   .map(pos => this.getCellAtPos(pos));
+	// }
 
-  getPathToPosition(position:Pos){
-    return this.getCellAtPos(position).getCurrentPath();
-  }
+	// getValidAdjacentCells(pos:Pos){
+	//   return this.getAdjacentCells(pos)
+	//   .filter(cell => cell.isTravelValid());
+	// }
+
+	// getVisitedAdjacentCells(pos:Pos){
+	//   return this.getAdjacentCells(pos)
+	//   .filter(cell => cell.state === CELLSTATE.visited);
+	// }
+
+	// ---- Path Utils ----
+
+	getPathToCell(cell: CellData) {
+		return cell.getCurrentPath();
+	}
+
+	getPathToPosition(position: Pos) {
+		return this.getCellAtPos(position).getCurrentPath();
+	}
 }

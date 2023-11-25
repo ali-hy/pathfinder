@@ -33,7 +33,6 @@ export default function PathFinder() {
 	const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0, 0));
 	const [allowDiagonals, setAllowDiagonals] = useState(false);
 	const [board, setBoard] = useState(useMemo(() => generateBoard(allowDiagonals), []));
-	const [boardState, setBoardState] = useState(BOARDSTATE.drawing);
 	const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
 	const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
 	const [startPosition, setStartPosition] = useState<Pos>();
@@ -81,9 +80,9 @@ export default function PathFinder() {
 				}
 			});
 		});
+		board.state = BOARDSTATE.drawing
 		setBoard(copyBoard(board));
 		setMessage("");
-		setBoardState(BOARDSTATE.drawing);
 	};
 
 	const fillInPath = (path: Pos[]) => {
@@ -119,7 +118,7 @@ export default function PathFinder() {
 		if (!(selectedTool instanceof placeTool)) {
 			return;
 		}
-		if (boardState === BOARDSTATE.searchComplete) {
+		if (board.state === BOARDSTATE.searchComplete) {
 			resetPathSearch();
 		}
 		const nextBoard = copyBoard(board);
@@ -167,7 +166,7 @@ export default function PathFinder() {
 		const currentRemainder = elapsedTime % defaultAnimationInterval;
 
 		if (currentRemainder < prevRemainder.current) {
-			for (let i = 0; i < 10; i++) {
+			for (let i = 0; i < 4; i++) {
 				if (executePathfindingStep() === BOARDSTATE.searchComplete) {
 					return;
 				}
@@ -179,7 +178,7 @@ export default function PathFinder() {
 	}
 
 	const playAnimation = () => {
-		if (boardState === BOARDSTATE.drawing) {
+		if (board.state === BOARDSTATE.drawing) {
 			initPathFinding();
 			setSelectedTool(tools[TOOL.hand]);
 		}
@@ -189,44 +188,57 @@ export default function PathFinder() {
 	const executePathfindingStep = () => {
 		const {
 			board,
-			boardState,
 			path
 		} = algorithms[selectedAlgorithm].executeStep();
 
 		setBoard(board);
-		setBoardState(boardState);
-		if (boardState === BOARDSTATE.searchComplete) {
+		if (board.state === BOARDSTATE.searchComplete) {
 			if (path) {
 				fillInPath(path);
 			}
 		}
 
-		return boardState;
+		return board.state;
 	}
 
 	const executeOneStep = () => {
-		if (boardState === BOARDSTATE.drawing) {
+		if (board.state === BOARDSTATE.drawing) {
 			initPathFinding();
 		}
 		executePathfindingStep();
 	}
 
-	const disableSearch = boardState === BOARDSTATE.searchComplete;
-
 	// ANIMATION
-	const makeBoardAnimationStep = (generator: Generator<BoardData, any, any>, interval: number) => {
+	const makeBoardAnimationStep = (generator: Generator<BoardData, any, any>, interval: number, multiplier = 1) => {
 		const step = (timeStamp: number) => {
 			if (startTime.current < 0) {
 				startTime.current = timeStamp;
 			}
+
 			const elapsedTime = timeStamp - startTime.current;
+
+			if (elapsedTime > 5000)
+				multiplier = 2;
+			else if (elapsedTime > 10000)
+				multiplier = 20;
+
 			const currentRemainder = elapsedTime % interval;
 
 			if (currentRemainder < prevRemainder.current) {
-				const next = generator.next();
+				let next: IteratorResult<BoardData>;
+
+				for (let i = 0; i < multiplier; i++) {
+					next = generator.next();
+					if (next.done)
+						break;
+				}
+
 				setBoard(next.value);
 				if (next.done) {
-					board.state = BOARDSTATE.drawing;
+					setBoard((board) => {
+						board.state = BOARDSTATE.drawing;
+						return copyBoard(board);
+					})
 					return;
 				}
 			}
@@ -254,7 +266,12 @@ export default function PathFinder() {
 		setAllowDiagonals(false);
 		setSelectedTool(tools[TOOL.hand]);
 		board.state = BOARDSTATE.generatingMaze;
+		setBoard(copyBoard);
 		animateBoard(dfsMazeGenerator, 10);
+	}
+
+	const fillInPath1 = () => {
+
 	}
 
 	const disableUI =
@@ -284,6 +301,7 @@ export default function PathFinder() {
 						<button
 							onClick={clearBoard}
 							className={"btn btn-light"}
+							disabled={disableUI}
 						>Clear board
 						</button>
 					</li>
@@ -294,27 +312,30 @@ export default function PathFinder() {
 						type={"checkbox"}
 						className={"btn btn-dark me-1"}
 						checked={allowDiagonals}
-						onClick={() => {
+						onChange={() => {
 							setAllowDiagonals(!allowDiagonals);
-							algorithms[selectedAlgorithm].board.setDiagonals(!allowDiagonals);
+							board.setDiagonals(!allowDiagonals);
 						}}
+						disabled={disableUI}
 					/>
 					<label className={"me-4"} htmlFor={"allow-diagonals-checkbox"}>Allow
 						Diagonals</label>
 					<button className="btn btn-outline-primary me-2"
-									onClick={resetPathSearch}>Reset Search
+									onClick={resetPathSearch}
+									disabled={disableUI}
+					>Reset Search
 					</button>
 					<button
 						className="btn btn-primary me-2"
 						onClick={() => playAnimation()}
-						disabled={disableSearch}
+						disabled={disableUI}
 					>
 						Find Path
 					</button>
 					<button
 						className="btn btn-primary next-btn fw-bold"
 						onClick={() => executeOneStep()}
-						disabled={disableSearch}
+						disabled={disableUI}
 					>
 						&gt;
 					</button>

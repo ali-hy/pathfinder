@@ -1,6 +1,6 @@
 .banner {
   z-index: 10000;
-  box-shadow: 0 2px 5px 0px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.4);
 }
 
 .banner-title {
@@ -19,7 +19,6 @@
 }
 
 .tool-btn.disabled {
-  cursor: no-drop;
   pointer-events: none;
   opacity: 0.5;
 }

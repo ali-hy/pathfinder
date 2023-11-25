@@ -1,72 +1,73 @@
 import copyBoard from "../../utils/copyBoard";
 import BoardData from "../../Types/BoardData";
-import { BOARDSTATE } from "../../Types/BoardState";
-import { CELLSTATE } from "../../Types/CellState";
+import {BOARDSTATE} from "../../Types/BoardState";
+import {CELLSTATE} from "../../Types/CellState";
 import Pos from "../../Types/Pos";
-import { ALGORITHM } from "./ALGORITHM";
-import { PathfindingAlgorithm } from "./PathfindingAlgorithm";
+import {ALGORITHM} from "./ALGORITHM";
+import {PathfindingAlgorithm} from "./PathfindingAlgorithm";
 
-export default class DfsPathfinder extends PathfindingAlgorithm{
-  name = "DFS";
-  index = ALGORITHM.dfs;
-  posStack:Pos[];
-  shortestPath:Pos[];
+export default class DfsPathfinder extends PathfindingAlgorithm {
+	name = "DFS";
+	index = ALGORITHM.dfs;
+	posStack: Pos[];
+	shortestPath: Pos[];
 
-  initPathfinding(board:BoardData, startingPosition:Pos){
-    super.initPathfinding(board, startingPosition);
-    const adjacentPositions = this.getCellAtPos(startingPosition).edgesToValid().map(({start, end}) => {
-      end.setParent(start);
-      return end.position;
-    });
-    this.posStack = [...adjacentPositions];
+	initPathfinding(board: BoardData, startingPosition: Pos) {
+		super.initPathfinding(board, startingPosition);
+		const adjacentPositions = this.getCellAtPos(startingPosition).edgesToValid().map(({
+																																												start,
+																																												end
+																																											}) => {
+			end.setParent(start);
+			return end.position;
+		});
+		this.posStack = [...adjacentPositions];
 
-  }
-  
-  noMoreSteps(){
-    return this.posStack.length <= 0;
-  }
-  
-  executeStep(){
-    if(this.noMoreSteps()){
-      return {
-        board: this.board,
-        boardState: BOARDSTATE.searchComplete
-      };
-    }
+	}
 
-    const currentCell = this.getCellAtPos(this.posStack.pop());
-    if(!currentCell.isTravelValid()){
-      return{
-        board: this.board,
-        boardState: BOARDSTATE.searching
-      }
-    }
+	noMoreSteps() {
+		return this.posStack.length <= 0;
+	}
 
-    if(currentCell.state === CELLSTATE.target){
-      this.foundTargetPosition = currentCell.position;
-    } else {
-      const edgesToValid = currentCell.edgesToValid();
-      const adjacentPositions = currentCell.edgesToValid().map(({end}) => end.position); 
+	executeStep() {
+		if (this.noMoreSteps()) {
+			this.board.state = BOARDSTATE.searchComplete;
+			return {
+				board: this.board,
+			};
+		}
 
-      this.posStack.push(...adjacentPositions);
-      edgesToValid.forEach(({start, end}) => {
-        end.setParent(start);
-      });
+		const currentCell = this.getCellAtPos(this.posStack.pop());
+		if (!currentCell.isTravelValid()) {
+			this.board.state = BOARDSTATE.searching;
+			return {
+				board: this.board,
+			}
+		}
 
-      currentCell.visit();
-    }
+		if (currentCell.state === CELLSTATE.target) {
+			this.foundTargetPosition = currentCell.position;
+		} else {
+			const edgesToValid = currentCell.edgesToValid();
+			const adjacentPositions = currentCell.edgesToValid().map(({end}) => end.position);
 
-    let boardState:BOARDSTATE;
-    if(this.foundTargetPosition || this.posStack.length === 0){
-      boardState = BOARDSTATE.searchComplete;
-    } else {
-      boardState = BOARDSTATE.searching;
-    }
+			this.posStack.push(...adjacentPositions);
+			edgesToValid.forEach(({start, end}) => {
+				end.setParent(start);
+			});
 
-    return {
-      board: copyBoard(this.board),
-      boardState: boardState,
-      path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
-    };
-  }
+			currentCell.visit();
+		}
+
+		if (this.foundTargetPosition || this.posStack.length === 0) {
+			this.board.state = BOARDSTATE.searchComplete;
+		} else {
+			this.board.state = BOARDSTATE.searching;
+		}
+
+		return {
+			board: copyBoard(this.board),
+			path: this.foundTargetPosition ? this.getPathToPosition(this.foundTargetPosition) : undefined
+		};
+	}
 }
