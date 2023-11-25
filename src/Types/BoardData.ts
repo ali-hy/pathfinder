@@ -1,4 +1,4 @@
-import {BOARDSTATE} from "./BoardState";
+import {BOARDSTATE} from "./BOARDSTATE";
 import CellData from "./CellData";
 import Edge from "./Edge";
 import Pos from "./Pos";
@@ -19,6 +19,7 @@ export default class BoardData {
 		this.grid = [];
 		CellData.board = this;
 		Edge.board = this;
+		this.state = BOARDSTATE.drawing;
 		this.allowDiagonals = allowDiagonals;
 
 		for (let i = 0; i < height; i++) {

@@ -6,7 +6,11 @@ import tools, {placeTool, TOOL, tool} from "../Types/Tools";
 import Banner from "./Banner/Banner";
 import Board from "./Board/Board";
 import ToolButton from "./Banner/ToolButton";
-import {BOARDSTATE} from "../Types/BoardState";
+import {
+	BOARDSTATE,
+	boardToDrawing,
+	boardToPlayingAnimation, boardToSearchComplete
+} from "../Types/BOARDSTATE";
 import {ALGORITHM} from "../algorithms/pathfinding/ALGORITHM";
 import {
 	PathfindingAlgorithm
@@ -28,6 +32,18 @@ function generateBoard(allowDiagonals = false) {
 	return new BoardData(gridHeight, gridWidth, allowDiagonals);
 }
 
+function* drawPath(board: BoardData, path: Pos[]) {
+	path.pop();
+	path.shift();
+
+	for (let i = 0; i < path.length; i++) {
+		board.cellAtPos(path[i]).walk();
+		yield copyBoard(board);
+	}
+
+	return (board);
+}
+
 export default function PathFinder() {
 	const [algorithms, setAlgorithms] = useState<PathfindingAlgorithm[]>([]);
 	const [boardPosition, setBoardPosition] = useState<Pos>(new Pos(0, 0));
@@ -35,12 +51,11 @@ export default function PathFinder() {
 	const [board, setBoard] = useState(useMemo(() => generateBoard(allowDiagonals), []));
 	const [selectedAlgorithm, selectAlgorithm] = useState(ALGORITHM.bfs);
 	const [selectedTool, setSelectedTool] = useState(tools[TOOL.hand]);
-	const [startPosition, setStartPosition] = useState<Pos>();
-	const [targetPosition, setTargetPosition] = useState<Pos>();
+	const [startPosition, setStartPosition] = useState<Pos | undefined>();
+	const [targetPosition, setTargetPosition] = useState<Pos | undefined>();
 	const [message, setMessage] = useState<string>();
 
 	const startTime = useRef<number>(-1);
-	const walkIntervalTime = useRef<number>(10);
 	const prevRemainder = useRef<number>(0);
 
 	// ---- UTILITY FUNCTIONS ----
@@ -86,32 +101,7 @@ export default function PathFinder() {
 	};
 
 	const fillInPath = (path: Pos[]) => {
-		path.pop();
-		path.shift();
-		let startTime: number,
-			prevRemainder = {current: -1},
-			indexInPath = {current: 0};
-
-		const walkOneStep = (time: number) => {
-			if (indexInPath.current >= path.length) {
-				return;
-			}
-			if (startTime === undefined) {
-				startTime = time;
-				prevRemainder.current = 0;
-			}
-			const elapsedTime = time - startTime;
-			const currentRemainder = elapsedTime % walkIntervalTime.current;
-			if (currentRemainder < prevRemainder.current) {
-				const currentCell = getCellAtPos(path[indexInPath.current++]);
-				currentCell.walk();
-				setBoard(copyBoard(board));
-			}
-			prevRemainder.current = currentRemainder;
-			requestAnimationFrame(walkOneStep);
-		};
-
-		requestAnimationFrame(walkOneStep);
+		animateBoard(drawPath, undefined, boardToSearchComplete, undefined, path);
 	};
 
 	const onCellClick = (x: number, y: number): void => {
@@ -121,6 +111,12 @@ export default function PathFinder() {
 		if (board.state === BOARDSTATE.searchComplete) {
 			resetPathSearch();
 		}
+
+		if (startPosition?.equals({x, y}))
+			setStartPosition(undefined);
+		else if (targetPosition?.equals({x, y}))
+			setTargetPosition(undefined);
+
 		const nextBoard = copyBoard(board);
 		const {payload} = selectedTool.onMouseDown(new Pos(x, y));
 		if (payload.replacePrev) {
@@ -147,10 +143,6 @@ export default function PathFinder() {
 		const {payload} = selectedTool.onMouseEnter(new Pos(x, y));
 		nextBoard.cellAtPos({x, y}).state = payload.newState;
 		setBoard(nextBoard);
-	};
-
-	const getCellAtPos = ({x, y}: Pos) => {
-		return board.cellAtPos({x, y});
 	};
 
 	// PATHFINDING
@@ -201,15 +193,10 @@ export default function PathFinder() {
 		return board.state;
 	}
 
-	const executeOneStep = () => {
-		if (board.state === BOARDSTATE.drawing) {
-			initPathFinding();
-		}
-		executePathfindingStep();
-	}
-
 	// ANIMATION
-	const makeBoardAnimationStep = (generator: Generator<BoardData, any, any>, interval: number, multiplier = 1) => {
+	const makeBoardAnimationStep = (generator: Generator<BoardData, any, any>,
+																	interval: number,
+																	onDone: (board: BoardData) => void) => {
 		const step = (timeStamp: number) => {
 			if (startTime.current < 0) {
 				startTime.current = timeStamp;
@@ -217,8 +204,9 @@ export default function PathFinder() {
 
 			const elapsedTime = timeStamp - startTime.current;
 
-			if (elapsedTime > 5000)
-				multiplier = 2;
+			let multiplier = 1;
+			if (elapsedTime > 3000)
+				multiplier = 3;
 			else if (elapsedTime > 10000)
 				multiplier = 20;
 
@@ -236,7 +224,7 @@ export default function PathFinder() {
 				setBoard(next.value);
 				if (next.done) {
 					setBoard((board) => {
-						board.state = BOARDSTATE.drawing;
+						if (onDone !== undefined) onDone(board);
 						return copyBoard(board);
 					})
 					return;
@@ -251,13 +239,15 @@ export default function PathFinder() {
 	}
 
 	const animateBoard = (func: (boardData: BoardData, ...args: any[]) => Generator<BoardData, any, any>,
-												interval?: number,
+												onStart: (board: BoardData) => void = boardToPlayingAnimation,
+												onDone: (board: BoardData) => void = boardToDrawing,
+												interval: number = defaultAnimationInterval,
 												...callbackArgs: any[]) => {
-		if (interval == undefined)
-			interval = defaultAnimationInterval;
 
 		const generator = func(board, ...callbackArgs);
-		const step = makeBoardAnimationStep(generator, interval)
+		startTime.current = -1;
+		onStart(board);
+		const step = makeBoardAnimationStep(generator, interval, onDone)
 
 		requestAnimationFrame(step);
 	}
@@ -267,17 +257,14 @@ export default function PathFinder() {
 		setSelectedTool(tools[TOOL.hand]);
 		board.state = BOARDSTATE.generatingMaze;
 		setBoard(copyBoard);
-		animateBoard(dfsMazeGenerator, 10);
+		animateBoard(dfsMazeGenerator, boardToPlayingAnimation, boardToDrawing, 10);
 	}
 
-	const fillInPath1 = () => {
+	const disableBoardEditing =
+		board.state !== BOARDSTATE.drawing;
 
-	}
-
-	const disableUI =
-		board.state === BOARDSTATE.generatingMaze ||
-		board.state === BOARDSTATE.searching ||
-		board.state === BOARDSTATE.paused;
+	const disableReset =
+		board.state !== BOARDSTATE.searchComplete;
 
 	return (
 		<>
@@ -294,15 +281,16 @@ export default function PathFinder() {
 							setSelectedTool={() => {
 								setSelectedTool(t);
 							}}
-							disabled={disableUI}
+							disabled={disableBoardEditing}
 						/>
 					))}
 					<li>
 						<button
 							onClick={clearBoard}
 							className={"btn btn-light"}
-							disabled={disableUI}
-						>Clear board
+							disabled={disableReset}
+						>
+							Clear board
 						</button>
 					</li>
 				</ul>
@@ -316,28 +304,32 @@ export default function PathFinder() {
 							setAllowDiagonals(!allowDiagonals);
 							board.setDiagonals(!allowDiagonals);
 						}}
-						disabled={disableUI}
+						disabled={disableBoardEditing}
 					/>
 					<label className={"me-4"} htmlFor={"allow-diagonals-checkbox"}>Allow
 						Diagonals</label>
+
+					<button
+						disabled={disableBoardEditing}
+						className={"btn btn-secondary me-3"}
+						onClick={generateMaze}
+					>
+						Generate maze
+					</button>
+
 					<button className="btn btn-outline-primary me-2"
 									onClick={resetPathSearch}
-									disabled={disableUI}
-					>Reset Search
+									disabled={disableReset}
+					>
+						Reset Search
 					</button>
+
 					<button
 						className="btn btn-primary me-2"
 						onClick={() => playAnimation()}
-						disabled={disableUI}
+						disabled={disableBoardEditing}
 					>
 						Find Path
-					</button>
-					<button
-						className="btn btn-primary next-btn fw-bold"
-						onClick={() => executeOneStep()}
-						disabled={disableUI}
-					>
-						&gt;
 					</button>
 					{message && <p className="message">{message}</p>}
 				</div>
@@ -350,12 +342,7 @@ export default function PathFinder() {
 				onCellClick={(x: number, y: number) => onCellClick(x, y)}
 				onCellEnter={(x: number, y: number) => onCellEnter(x, y)}
 			/>
-			<button
-				disabled={disableUI}
-				className={"btn btn-secondary position-fixed end-0 bottom-0 me-4 mb-4"}
-				onClick={generateMaze}
-			>Generate maze
-			</button>
+
 		</>
 	);
 }

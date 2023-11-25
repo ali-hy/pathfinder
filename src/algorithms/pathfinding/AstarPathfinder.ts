@@ -1,6 +1,6 @@
 import copyBoard from "../../utils/copyBoard";
 import BoardData from "../../Types/BoardData";
-import {BOARDSTATE} from "../../Types/BoardState";
+import {BOARDSTATE} from "../../Types/BOARDSTATE";
 import {CELLSTATE} from "../../Types/CellState";
 import Pos from "../../Types/Pos";
 import PriorityQueue from "../../Types/util/PriorityQueue";
