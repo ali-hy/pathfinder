@@ -9,7 +9,8 @@ import ToolButton from "./Banner/ToolButton";
 import {
 	BOARDSTATE,
 	boardToDrawing,
-	boardToPlayingAnimation, boardToSearchComplete
+	boardToPlayingAnimation,
+	boardToSearchComplete
 } from "../Types/BOARDSTATE";
 import {ALGORITHM} from "../algorithms/pathfinding/ALGORITHM";
 import {
@@ -288,7 +289,7 @@ export default function PathFinder() {
 						<button
 							onClick={clearBoard}
 							className={"btn btn-light"}
-							disabled={disableReset}
+							disabled={disableBoardEditing && disableReset}
 						>
 							Clear board
 						</button>
